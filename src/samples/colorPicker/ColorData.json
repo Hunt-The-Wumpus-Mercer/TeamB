@@ -1,0 +1,28 @@
+{
+    "colors": [
+        {
+            "name": "Red",
+            "rgb": "#FF0000"
+        },
+        {
+            "name": "Orange",
+            "rgb": "#FFA500"
+        },
+        {
+            "name": "Yellow",
+            "rgb": "#FFFF00"
+        },
+        {
+            "name": "Green",
+            "rgb": "#008000"
+        },
+        {
+            "name": "Blue",
+            "rgb": "#0000FF"
+        },
+        {
+            "name": "Purple",
+            "rgb": "#800080"
+        }
+    ]
+}

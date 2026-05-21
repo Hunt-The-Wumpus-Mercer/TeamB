@@ -1,0 +1,12 @@
+.color-picker-tiles {
+    display: flex;
+    flex-direction: row; /* This is the default, but good to be explicit */
+    gap: 10px;           /* Adds space between your color swatches */
+    justify-self: center; /* make sure tiles are centered */
+}
+
+.color-picker-tile {
+    color: white;
+    border: 1px solid white;
+    margin: 8px;
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Hunt The Wumpus Web",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "features": {},
+  "postCreateCommand": "npm ci || npm install",
+  "forwardPorts": [5173], // For Vite dev server
+  "portsAttributes": {
+    "5173": {
+      "label": "Hunt The Wumpus Web dev server",
+      "onAutoForward": "openPreview" // Open in browser preview when forwarded
+    }
+  },
+  "customizations": {
+    // Disable GitHub Copilot in the devcontainer
+    "vscode": {
+      "settings": {
+        "github.copilot.enable": {
+          "*": false
+        }
+      },
+      "extensions": ["-GitHub.copilot", "-GitHub.copilot-chat"]
+    }
+  }
+}
