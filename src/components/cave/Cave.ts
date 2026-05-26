@@ -1,15 +1,27 @@
-export interface ICave {
+import type {ICave} from "./ICave"
+import caveData from './cave1.json';
+
+export default class Cave implements ICave {
+   
     /**
     * Loads cave data from one of the available cave files.
     * Rooms are numbered from 1..N.
     * A value of 0 means there is no adjacent room/connection for that side.
      */
-    loadCave(caveName: string): void;
+    loadCave(caveName: string): void
+    {
+        caveData[1].connected_rooms
+      
+
+    }
 
     /**
      * Returns the list of cave file paths that can be loaded.
      */
-    getAvailableCaves(): string[];
+    getAvailableCaves(): string[]
+    {
+        return [];
+    }
 
     /**
      * Returns the number of rooms in the currently loaded cave.
