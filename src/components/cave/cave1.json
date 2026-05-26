@@ -1,0 +1,8 @@
+{
+    "1": {
+        "connected_rooms": [2, 5, 7, 9]
+    },
+    "2":{
+          "connected_rooms": [5,7]
+    }
+}
