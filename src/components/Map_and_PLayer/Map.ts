@@ -1,4 +1,5 @@
-import { type IMap,MapObjectType }from "./IMap"
+
+import { type IMap, MapObjectType } from "./IMap";
 
 export default class Map implements IMap {
     player = 0;
