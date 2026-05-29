@@ -20,7 +20,7 @@ export default class SoundManager implements ISoundManager {
         }
         else if(soundEventType == SoundEventType.LOSE)
         {
-            path = "";
+            path = "src/components/sound/u_l5xum8z250-losing-horn-313723.mp3";
         }
         else if(soundEventType == SoundEventType.WARNING_BAT)
         {
