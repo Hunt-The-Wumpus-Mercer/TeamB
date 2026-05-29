@@ -1,4 +1,5 @@
-import { type IMap,MapObjectType }from "./IMap"
+
+import { type IMap, MapObjectType } from "./IMap";
 
 export default class Map implements IMap {
     player = 0;
@@ -12,9 +13,22 @@ export default class Map implements IMap {
          * Returns the room location for the requested map object.
          */
         getRoomLocation(type: MapObjectType): number{
-            return 1;
+            if(type === MapObjectType.PLAYER){
+                return this.player;
+            }
+            else if(type === MapObjectType.BAT1){
+                return this.bat1;
+            }
+            else if(type === MapObjectType.BAT2){
+                return this.bat2;
+            }else if(type === MapObjectType.PIT1){
+                return this.pit1;
+            }else if(type === MapObjectType.PIT2){
+                return this.pit2;
+            }else {
+                return this.wumpus;
+            }
         }
-    
         /**
          * Sets the room location for the requested map object.
          */
@@ -32,7 +46,7 @@ export default class Map implements IMap {
                 this.pit1 === roomNumber;
             }else if(type === MapObjectType.PIT2){
                 this.pit2 === roomNumber;
-            }else if(type === MapObjectType.WUMPUS){
+            }else {
                 this.wumpus = roomNumber;
             }
         }
