@@ -12,7 +12,7 @@ export default class SoundManager implements ISoundManager {
         }
         else if(soundEventType == SoundEventType.SHOOT_ARROW)
         {
-            path = "";
+            path = "src/components/sound/djartmusic-arrow-twang_01-306041.mp3";
         }
         else if(soundEventType == SoundEventType.WIN)
         {
