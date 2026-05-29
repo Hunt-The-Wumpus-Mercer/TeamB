@@ -2,13 +2,14 @@ export type QuestionPrompt = {
     question: string;
     answers: string[];
     correctAnswerIndex: number;
+    id: number;
 };
 
 export interface ITrivia {
     /**
      * Loads trivia questions from the configured data source.
      */
-    initialize(): Promise<void>;
+    initialize(): void;
 
     /**
      * Returns one random remaining question, shuffles answer order,

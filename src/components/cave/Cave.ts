@@ -1,7 +1,14 @@
 import type {ICave} from "./ICave"
-import caveData from './cave1.json';
+import cave1 from './cave1.json';
+import cave2 from './cave2.json';
 
 export default class Cave implements ICave {
+
+    private rooms: any = {};
+    private caves: any = { 
+        cave1: cave1,
+        cave2: cave2,
+    };
    
     /**
     * Loads cave data from one of the available cave files.
@@ -10,7 +17,7 @@ export default class Cave implements ICave {
      */
     loadCave(caveName: string): void
     {
-        caveData[1].connected_rooms
+        this.rooms = this.caves[caveName];
       
 
     }
@@ -20,23 +27,36 @@ export default class Cave implements ICave {
      */
     getAvailableCaves(): string[]
     {
-        return [];
+        return Object.keys(this.caves);
     }
 
     /**
      * Returns the number of rooms in the currently loaded cave.
      */
-    getRoomCount(): number;
+    getRoomCount(): number
+    {
+        return this.getAvailableCaves().length;
+    }
+
+    getRoom(roomNumber: number) : any {
+        return this.rooms[roomNumber];
+    }
 
     /**
      * Returns six adjacent room entries for the given room.
      * Each value is a room number in the range 1..N, or 0 when no adjacent room exists.
      */
-    getAdjacentRooms(roomNumber: number): number[];
+    getAdjacentRooms(roomNumber: number): number[]
+    {
+        return this.getRoom(roomNumber).adjacent_rooms;
+    }
 
     /**
      * Returns six connected room entries for the given room,
      * using 0 where no doorway connection exists.
      */
-    getConnectedRooms(roomNumber: number): number[];
+    getConnectedRooms(roomNumber: number): number[]
+    {
+        return this.getRoom(roomNumber).connected_rooms;
+    }
 }
