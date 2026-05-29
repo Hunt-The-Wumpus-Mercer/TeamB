@@ -7,7 +7,7 @@ export interface IGraphics {
     updateCoinCount(coins: number): void;
     /** Updates the displayed turn count. */
     updateTurnCount(turns: number): void;
-    /** Updates the currently displayed  room number. */
+    /** Updates the currently displayed room number. */
     updateCurrentRoom(roomNumber: number): void;
     /** Updates doorway visibility/state from adjacent room data. */
     updateRoomExits(adjacentRooms: number[]): void;
