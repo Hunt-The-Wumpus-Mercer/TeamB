@@ -8,7 +8,7 @@ export default class SoundManager implements ISoundManager {
         
         if(soundEventType == SoundEventType.WALK)
         {
-            path = "";
+            path = "src/components/sound/freesounds123-heavy-character-walk-363348.mp3";
         }
         else if(soundEventType == SoundEventType.SHOOT_ARROW)
         {
