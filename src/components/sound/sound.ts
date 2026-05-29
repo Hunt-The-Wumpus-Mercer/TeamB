@@ -32,7 +32,7 @@ export default class SoundManager implements ISoundManager {
         }
         else if(soundEventType == SoundEventType.WARNING_WUMPUS)
         {
-            path = "";
+            path = "src/components/sound/freesound_community-monster-roar-6985.mp3";
         }
 
         // Only play if a matching path was found
