@@ -6,11 +6,13 @@ export default class trivia implements ITrivia {
     private remainingQuestions: QuestionPrompt[] = [];
 
     initialize(): void {
-    
-        this.remainingQuestions = (Questions as QuestionPrompt[]).map(q => ({
-            ...q,
-            answers: [...q.answers]
-        }));
+        
+       this.remainingQuestions = (Questions as any[]).map(q => ({
+            id: Number(q.id),
+            question: q.question,
+            answers: [...q.answers],
+            correctAnswerIndex: Number(q.correctAnswerIndex)
+        })); 
 
 
     }
