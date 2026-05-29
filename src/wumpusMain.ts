@@ -1,6 +1,7 @@
 
 import $ from "jquery";
 import "./style.css";
+//import { Graphics } from "./components/Graphics/Graphics";
 import  GameControl  from "./components/game_control/GameControl";
 
 const $app = $("#app");
@@ -13,6 +14,6 @@ $app.html(`
 `);
 
 const gameControl = new GameControl();
-const container = $('#WumpusGameContainer');
-void gameControl.init(container);
+
+void gameControl.init("#WumpusGameContainer");
 

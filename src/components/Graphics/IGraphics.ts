@@ -1,5 +1,10 @@
+import type { IGameControl } from "../game_control/IGameControl";
+
 export interface IGraphics {
-    initialize(): void;
+    /**
+     * Initializes all game dependencies and renders the game UI.
+     */
+    init(containerSelector: string): Promise<void>;    
     /** Updates the displayed player name. */
     updatePlayerName(name: string): void;
     /** Updates the displayed arrow count. */
