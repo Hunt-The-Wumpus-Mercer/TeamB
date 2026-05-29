@@ -16,7 +16,7 @@ export default class SoundManager implements ISoundManager {
         }
         else if(soundEventType == SoundEventType.WIN)
         {
-            path = "";
+            path = "src/components/sound/mrstokes302-you-win-sfx-mrstokes302-442128.mp3";
         }
         else if(soundEventType == SoundEventType.LOSE)
         {
