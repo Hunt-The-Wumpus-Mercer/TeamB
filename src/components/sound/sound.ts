@@ -28,7 +28,7 @@ export default class SoundManager implements ISoundManager {
         }
         else if(soundEventType == SoundEventType.WARNING_PIT)
         {
-            path = "";
+            path = "src/components/sound/dragon-studio-thud-sound-effect-405470.mp3";
         }
         else if(soundEventType == SoundEventType.WARNING_WUMPUS)
         {
