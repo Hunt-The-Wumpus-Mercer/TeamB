@@ -1,4 +1,6 @@
-export interface IGraphics {
+import type IGraphics from "./IGraphics"
+
+export default class Graphics implements IGraphics {
     initialize(): void;
     /** Updates the displayed player name. */
     updatePlayerName(name: string): void;

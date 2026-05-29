@@ -14,3 +14,4 @@ $app.html(`
 const gameControl = new GameControl();
 
 void gameControl.init("#WumpusGameContainer");
+
