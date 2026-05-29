@@ -10,6 +10,7 @@ export default class Graphics implements IGraphics {
     {
         this.gameControl = gc;
 
+        this.northBox.textContent = "NORTH";
         this.northBox.src = 'https://i.pinimg.com/originals/e8/0c/f3/e80cf36f4eb13dca261438a58d39b390.gif';
         this.northBox.addEventListener('click', () => this.northBoxClicked());
         document.body.append(this.northBox);
@@ -20,11 +21,11 @@ export default class Graphics implements IGraphics {
      */
     init(containerSelector: string): Promise<void>
     {
-
+        return new Promise();
     }
 
     private northBoxClicked(): void 
-    
+    {
         console.log('North');
         this.gameControl?.movePlayer(CaveRoomDirections.NORTH);
     }
@@ -59,13 +60,28 @@ export default class Graphics implements IGraphics {
 
     }
     /** Updates doorway visibility/state from adjacent room data. */
-    updateRoomExits(adjacentRooms: number[]): void;
+    updateRoomExits(adjacentRooms: number[]): void
+    {
+
+    }
     /** Updates nearby hazard warnings shown to the player. */
-    updateWarnings(warnings: string[]): void;
+    updateWarnings(warnings: string[]): void
+    {
+
+    }
     /** Updates the main status text area. */
-    updateStatusMessage(message: string): void;
+    updateStatusMessage(message: string): void
+    {
+
+    }
     /** Updates the secret/hint display area. */
-    updateSecret(secret: string): void;
+    updateSecret(secret: string): void
+    {
+
+    }
     /** Forces a full UI redraw from current graphics state. */
-    updateScreen(): void;
+    updateScreen(): void
+    {
+
+    }
 }
