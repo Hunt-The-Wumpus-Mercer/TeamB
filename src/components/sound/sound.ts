@@ -8,23 +8,23 @@ export default class SoundManager implements ISoundManager {
         
         if(soundEventType == SoundEventType.WALK)
         {
-            path = "";
+            path = "src/components/sound/freesounds123-heavy-character-walk-363348.mp3";
         }
         else if(soundEventType == SoundEventType.SHOOT_ARROW)
         {
-            path = "";
+            path = "src/components/sound/djartmusic-arrow-twang_01-306041.mp3";
         }
         else if(soundEventType == SoundEventType.WIN)
         {
-            path = "";
+            path = "src/components/sound/mrstokes302-you-win-sfx-mrstokes302-442128.mp3";
         }
         else if(soundEventType == SoundEventType.LOSE)
         {
-            path = "";
+            path = "src/components/sound/u_l5xum8z250-losing-horn-313723.mp3";
         }
         else if(soundEventType == SoundEventType.WARNING_BAT)
         {
-            path = "";
+            path = "src/components/sound/the-vampires-monster-bat-chirping-type-2-355965.mp3";
         }
         else if(soundEventType == SoundEventType.WARNING_PIT)
         {
@@ -32,7 +32,7 @@ export default class SoundManager implements ISoundManager {
         }
         else if(soundEventType == SoundEventType.WARNING_WUMPUS)
         {
-            path = "";
+            path = "src/components/sound/freesound_community-monster-roar-6985.mp3";
         }
 
         // Only play if a matching path was found
