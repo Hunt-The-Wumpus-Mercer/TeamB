@@ -5,12 +5,10 @@ import cave2 from './cave2.json';
 export default class Cave implements ICave {
 
     private rooms: any = {};
-    // private caves: any{
-    //     cave1: cave1,
-    //     cave2: cave2,
-        
-
-    // };
+    private caves: any = { 
+        cave1: cave1,
+        cave2: cave2,
+    };
    
     /**
     * Loads cave data from one of the available cave files.
@@ -37,7 +35,11 @@ export default class Cave implements ICave {
      */
     getRoomCount(): number
     {
-        return Object.keys(this.rooms).length;
+        return this.getAvailableCaves().length;
+    }
+
+    getRoom(roomNumber: number) : any {
+        return this.rooms[roomNumber];
     }
 
     /**
@@ -46,7 +48,7 @@ export default class Cave implements ICave {
      */
     getAdjacentRooms(roomNumber: number): number[]
     {
-        return this.rooms[(String)roomNumber].adjacent_rooms;
+        return this.getRoom(roomNumber).adjacent_rooms;
     }
 
     /**
@@ -55,6 +57,6 @@ export default class Cave implements ICave {
      */
     getConnectedRooms(roomNumber: number): number[]
     {
-        return this.rooms[(String)roomNumber].connected_rooms;
+        return this.getRoom(roomNumber).connected_rooms;
     }
 }
