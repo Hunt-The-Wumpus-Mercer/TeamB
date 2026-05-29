@@ -1,17 +1,66 @@
 import type {IHighScores} from "./IHighScores"
 
+export interface HighScoreEntry {
+    name: string;
+    score: number;
+}
+
 export default class HighScores implements IHighScores {
-    load() : Promise<void> {}
-        /**
-        * Loads high scores from storage into memory.
-        */
-    addScore(name: string, score: number) : Promise<void> {}
-        /**
+    private scores: HighScoreEntry[] = [];
+    private readonly maxEntries = 10;
+    private readonly storageKey = "wumpusHighScores";
+
+    /**
+    * Loads high scores from storage into memory.
+    */
+    async load() : Promise<void> {
+        try {
+            if (typeof window !== "undefined" && window.localStorage) {
+                const storedScores = localStorage.getItem(this.storageKey);
+                if (storedScores) {
+                    this.scores = JSON.parse(storedScores);
+                    return;
+                }
+            }
+            this.scores = [];
+        } catch (error) {
+            console.error("Failed to load high scores: ", error);
+            this.scores = [];
+        }
+    }
+
+    /**
         * Adds a score, keeps the list sorted, and persists the updated results.
         */
+    async addScore(name: string, score: number): Promise<void> {
+        const cleanName = name.trim(); 
+        const newEntry: HighScoreEntry = {
+            name: cleanName,
+            score: score
+        };
+        this.scores.push(newEntry);
+        this.scores.sort((a, b) => b.score - a.score);
+        if (this.scores.length > this.maxEntries){
+            this.scores = this.scores.slice(0, this.maxEntries);
+        }
+        await this.save();
+    }
+    
+    private async save(): Promise<void> {
+        try{
+            if (typeof window != "undefined" && window.localStorage) {
+                localStorage.setItem(this.storageKey, JSON.stringify(this.scores));
+            }
+        } catch (error) {
+            console.error("Failed to save high scores: ", error);
+        }
+    }
 
-    getHighScores(): HighScoreEntry[] {}
-        /**
-         * Returns the current high score list.
-         */
+    /**
+    * Returns the current high score list.
+    */
+    getHighScores(): HighScoreEntry[] {
+        return [...this.scores];
+    }
+
 }
