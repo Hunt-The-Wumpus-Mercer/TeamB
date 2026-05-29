@@ -18,4 +18,9 @@ export interface IHighScores {
      * Returns the current high score list.
      */
     getHighScores(): HighScoreEntry[];
+
+    /** 
+     * Displaying high scores
+     */
+    showHS($container: JQuery): void;
 }

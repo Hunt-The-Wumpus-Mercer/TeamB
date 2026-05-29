@@ -1,4 +1,6 @@
 import type {IHighScores} from "./IHighScores"
+import HSGraphics from './HighScoresGraphics.html?raw';
+import $ from 'jquery';
 
 export interface HighScoreEntry {
     name: string;
@@ -61,6 +63,22 @@ export default class HighScores implements IHighScores {
     */
     getHighScores(): HighScoreEntry[] {
         return [...this.scores];
+    }
+
+    /** 
+     * Displaying high scores
+     */
+    private $container!: JQuery;
+    private $colorTiles!: JQuery;
+    showHS($container: JQuery): void {
+        this.$container = $container;
+        this.$container.hide();
+
+        this.$container.html(HSGraphics);
+        this.$container.on('click', '[data-role="openLeaderboard"]', (e) => this.onLeaderboardClick(e));
+
+        this.$container.show();
+
     }
 
 }
