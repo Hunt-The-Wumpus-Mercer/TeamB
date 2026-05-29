@@ -24,7 +24,7 @@ export default class SoundManager implements ISoundManager {
         }
         else if(soundEventType == SoundEventType.WARNING_BAT)
         {
-            path = "";
+            path = "src/components/sound/the-vampires-monster-bat-chirping-type-2-355965.mp3";
         }
         else if(soundEventType == SoundEventType.WARNING_PIT)
         {
