@@ -51,12 +51,6 @@ export class Player implements IPlayer {
 
     getScore(): number {
         const killBonus = this.wumpusKilled ? 100 : 0;
-        return (
-            100 -
-            this.resources.turns +
-            this.resources.coins +
-            10 * this.resources.arrows +
-            killBonus
-        );
+        return killBonus - this.resources.turns + this.resources.coins + 10 * this.resources.arrows;
     }
 }
