@@ -9,6 +9,8 @@ export class Player implements IPlayer {
     };
 
     private wumpusKilled = false;
+    private coinsCollected = 0;
+    private readonly MAX_COINS = 100;
 
     getPlayerName(): string {
         return this.name;
@@ -36,16 +38,25 @@ export class Player implements IPlayer {
         return (this.resources[resource] -= amount);
     }
 
+    collectCoin(): boolean {
+        if (this.coinsCollected >= this.MAX_COINS) return false;
+        this.coinsCollected++;
+        this.resources.coins++;
+        return true;
+    }
+
     setWumpusKilled(): void {
         this.wumpusKilled = true;
     }
 
     getScore(): number {
+        const killBonus = this.wumpusKilled ? 100 : 0;
         return (
-            this.resources.coins +
-            this.resources.arrows -
+            100 -
             this.resources.turns +
-            (this.wumpusKilled ? 50 : 0)
+            this.resources.coins +
+            10 * this.resources.arrows +
+            killBonus
         );
     }
 }

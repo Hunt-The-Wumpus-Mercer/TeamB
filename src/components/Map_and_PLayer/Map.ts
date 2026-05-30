@@ -43,9 +43,9 @@ export default class Map implements IMap {
             else if(type === MapObjectType.BAT2){
                 this.bat2 = roomNumber;
             }else if(type === MapObjectType.PIT1){
-                this.pit1 === roomNumber;
+                this.pit1 = roomNumber;
             }else if(type === MapObjectType.PIT2){
-                this.pit2 === roomNumber;
+                this.pit2 = roomNumber;
             }else {
                 this.wumpus = roomNumber;
             }

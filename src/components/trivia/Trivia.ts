@@ -6,13 +6,11 @@ export default class trivia implements ITrivia {
     private remainingQuestions: QuestionPrompt[] = [];
 
     initialize(): void {
-        
-       this.remainingQuestions = (Questions as any[]).map(q => ({
-            id: Number(q.id),
+        this.remainingQuestions = (Questions as any[]).map(q => ({
             question: q.question,
             answers: [...q.answers],
             correctAnswerIndex: Number(q.correctAnswerIndex)
-        })); 
+        }));
 
 
     }
@@ -39,7 +37,6 @@ export default class trivia implements ITrivia {
         const newCorrectIndex = shuffledAnswers.indexOf(correctAnswerText);
 
         return {
-            id: targetQuestion.id,
             question: targetQuestion.question,
             answers: shuffledAnswers,
             correctAnswerIndex: newCorrectIndex
@@ -47,17 +44,14 @@ export default class trivia implements ITrivia {
 
     }
 
-    getHint(): string {
-        
-       if (this.remainingQuestions.length === 0) {
-            throw new Error("No questions left to generate a hint from.");
-        }
+    getRemainingCount(): number {
+        return this.remainingQuestions.length;
+    }
 
-        const randomIndex = Math.floor(Math.random() * this.remainingQuestions.length);
-        const randomQuestion = this.remainingQuestions[randomIndex];
-        
-        const correctAnswer = randomQuestion.answers[randomQuestion.correctAnswerIndex];
-        return `Hint: The answer starts with the letter "${correctAnswer.charAt(0)}" and has ${correctAnswer.length} characters.`;
+    getHint(): string {
+        if (this.remainingQuestions.length === 0) return "No trivia left!";
+        const q = this.remainingQuestions[Math.floor(Math.random() * this.remainingQuestions.length)];
+        return `Q: ${q.question}  —  A: ${q.answers[q.correctAnswerIndex]}`;
     }
     
 }

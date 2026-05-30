@@ -1,18 +1,5 @@
+import GameControl from "./components/game_control/GameControl";
 
-import $ from "jquery";
-import "./style.css";
-//import { Graphics } from "./components/Graphics/Graphics";
-import  GameControl  from "./components/game_control/GameControl";
-
-const $app = $("#app");
-$app.html(`
-	<div>
-		<h1>Hunt the Wumpus</h1>
-		<div id="WumpusGameContainer"></div>
-		<div id="test"></div>
-	</div>
-`);
-
-const gameControl = new GameControl();
-const container = $('#WumpusGameContainer');
-void gameControl.init(container);
+const app = document.getElementById("app")!;
+const game = new GameControl();
+void game.init(app);

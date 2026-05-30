@@ -1,5 +1,3 @@
-import type { IGameControl } from "../game_control/IGameControl";
-
 export interface IGraphics {
     /**
      * Initializes all game dependencies and renders the game UI.

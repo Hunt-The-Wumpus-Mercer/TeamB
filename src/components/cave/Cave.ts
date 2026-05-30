@@ -1,13 +1,19 @@
 import type {ICave} from "./ICave"
 import cave1 from './cave1.json';
 import cave2 from './cave2.json';
+import cave3 from './cave3.json';
+import cave4 from './cave4.json';
+import cave5 from './cave5.json';
 
 export default class Cave implements ICave {
 
     private rooms: any = {};
-    private caves: any = { 
-        cave1: cave1,
-        cave2: cave2,
+    private caves: any = {
+        cave1,
+        cave2,
+        cave3,
+        cave4,
+        cave5,
     };
    
     /**
@@ -35,7 +41,7 @@ export default class Cave implements ICave {
      */
     getRoomCount(): number
     {
-        return this.getAvailableCaves().length;
+        return Object.keys(this.rooms).length;
     }
 
     getRoom(roomNumber: number) : any {

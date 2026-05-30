@@ -1,5 +1,5 @@
-import {type ISoundManager} from "./isoundmanager"
-import {SoundEventType} from "./isoundmanager"
+import {type ISoundManager} from "./ISound"
+import {SoundEventType} from "./ISound"
 
 export default class SoundManager implements ISoundManager {
 

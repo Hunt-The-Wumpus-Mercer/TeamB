@@ -1,38 +1,307 @@
-
-[ {
-        "question" : "What's 1 + 1",
-        "answers" : ["two", "four", "six", "eight"],
-        "correctAnswerIndex" : "0",
-        "id" : "1"
-    },
-    {
-        "question" : "What's 1 + 2",
-        "answers" : ["three", "four", "six", "eight"],
-        "correctAnswerIndex" : "0",
-        "id" : "2"
-    },
-    {
-        "question" : "What's 1 + 4",
-        "answers" : ["five", "four", "six", "eight"],
-        "correctAnswerIndex" : "0",
-        "id" : "3"
-    }, 
-    {
-        "question" : "What's 2 + 9",
-        "answers" : ["eleven", "fourteen", "seven", "ten"],
-        "correctAnswerIndex" : "0",
-        "id" : "4"
-    }, 
-    {
-        "question" : "What's 17 + 12",
-        "answers" : ["nineteen", "fifteen", "six-hundred", "eighty"],
-        "correctAnswerIndex" : "0",
-        "id" : "5"
-    }, 
-    {
-        "question" : "What's 91 + 1",
-        "answers" : ["ninety-two", "fourty-six", "eighty-one", "nine"],
-        "correctAnswerIndex" : "0",
-        "id" : "6"
-    }
+[
+  {
+    "question": "What is Homer Simpson's catchphrase?",
+    "answers": ["D'oh!", "Cowabunga!", "Yabba dabba doo!", "Ay caramba!"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is the name of the bar Homer frequents in Springfield?",
+    "answers": ["Moe's Tavern", "The Rusty Nail", "Duff's Bar", "The Anchor"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What beer does Homer drink?",
+    "answers": ["Duff Beer", "Buzz Cola", "Fudd Beer", "Krusty Lager"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is Bart Simpson's full name?",
+    "answers": ["Bartholomew J. Simpson", "Bartley James Simpson", "Barton Jay Simpson", "Barnaby John Simpson"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is the name of the nuclear power plant in Springfield?",
+    "answers": ["Springfield Nuclear Power Plant", "Burns Energy Inc.", "Sector 7-G Works", "The Glow Factory"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "Who owns the Springfield Nuclear Power Plant?",
+    "answers": ["Mr. Burns", "Mayor Quimby", "Krusty the Clown", "Sideshow Bob"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is Mr. Burns's first name?",
+    "answers": ["Charles", "Chester", "Cornelius", "Calvin"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is the name of the Simpsons' neighbor?",
+    "answers": ["Ned Flanders", "Ted Flanders", "Fred Flanders", "Ed Flanders"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is the name of Springfield's police chief?",
+    "answers": ["Chief Wiggum", "Chief Clancy", "Chief Brockman", "Chief Bouvier"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is Krusty the Clown's real first name?",
+    "answers": ["Herschel", "Harold", "Howard", "Herbert"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What school do Bart and Lisa attend?",
+    "answers": ["Springfield Elementary", "Shelbyville Middle School", "Burns Academy", "Springfield Prep"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "Who is the principal of Bart's school?",
+    "answers": ["Principal Skinner", "Principal Burns", "Principal Quimby", "Principal Lovejoy"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What instrument does Lisa Simpson play?",
+    "answers": ["Saxophone", "Violin", "Trumpet", "Flute"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is the name of the Simpsons' baby?",
+    "answers": ["Maggie", "Molly", "Minnie", "Millie"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does Homer work as at the nuclear plant?",
+    "answers": ["Safety inspector", "Engineer", "Security guard", "Janitor"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is the name of Bart's best friend?",
+    "answers": ["Milhouse Van Houten", "Nelson Muntz", "Martin Prince", "Ralph Wiggum"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is the name of the Simpsons' cat?",
+    "answers": ["Snowball", "Fluffy", "Mittens", "Whiskers"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is the name of the Simpsons' dog?",
+    "answers": ["Santa's Little Helper", "Laddie", "Rex", "Buddy"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is Marge Simpson's maiden name?",
+    "answers": ["Bouvier", "Carlson", "Powell", "Flanders"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What city do the Simpsons live in?",
+    "answers": ["Springfield", "Shelbyville", "Capital City", "Ogdenville"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is Sideshow Bob's real name?",
+    "answers": ["Robert Underdunk Terwilliger Jr.", "Robert James Wiggum", "Roger Damien Fink", "Richard Edward Burns"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What show does Bart prank call Moe about?",
+    "answers": ["He makes up fake names to embarrass Moe", "He orders food", "He asks for directions", "He sings songs"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is the name of the Simpsons' TV show within the show?",
+    "answers": ["The Itchy & Scratchy Show", "The Krusty Show", "Scratchy & Friends", "Tom & Jerry Jr."],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is Mr. Burns's assistant's name?",
+    "answers": ["Smithers", "Smedley", "Standish", "Simmons"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is the name of the bar owner in The Simpsons?",
+    "answers": ["Moe Szyslak", "Joe Quimby", "Lou Carlson", "Eddie Tatum"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'no cap' mean in teen slang?",
+    "answers": ["No lie / for real", "No hat", "No problem", "No way"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "If something is 'bussin', what is it?",
+    "answers": ["Really good", "Really bad", "Really loud", "Really expensive"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does it mean to be 'ghosted'?",
+    "answers": ["Someone ignores you completely", "Someone scares you", "You get lost", "You become invisible"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'lowkey' mean?",
+    "answers": ["Secretly / kinda", "Very loud", "Definitely not", "Super obvious"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "If someone is 'salty', how do they feel?",
+    "answers": ["Bitter or upset", "Happy", "Confused", "Hungry"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'slay' mean in teen slang?",
+    "answers": ["To do something excellently", "To destroy something", "To fail badly", "To sleep in"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is a 'pick-me'?",
+    "answers": ["Someone who seeks attention by putting others down", "Someone popular", "Someone who gives great advice", "Someone who is very smart"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "If something is 'mid', what is it?",
+    "answers": ["Mediocre / average", "Excellent", "Terrible", "Weird"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'rizz' refer to?",
+    "answers": ["Charisma / the ability to attract people", "A hairstyle", "A dance move", "A music genre"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does it mean if something 'hits different'?",
+    "answers": ["It feels uniquely special in a particular moment", "It physically hurts", "It is very loud", "It is confusing"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'understood the assignment' mean?",
+    "answers": ["Did exactly what was expected, perfectly", "Did the homework", "Misunderstood the task", "Was confused"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'bet' mean in teen slang?",
+    "answers": ["Okay / sounds good / agreed", "No way", "Let's gamble", "I'm not sure"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'it's giving' mean?",
+    "answers": ["It reminds me of / it has the vibe of", "It is giving away free things", "It is broken", "It is surprising"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'touch grass' mean?",
+    "answers": ["Go outside and get off the internet", "Mow the lawn", "Play sports", "Take a nap"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is a 'W' in teen slang?",
+    "answers": ["A win", "A wrong answer", "A weird person", "A wasted opportunity"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is an 'L' in teen slang?",
+    "answers": ["A loss or failure", "A lie", "A late person", "A lazy response"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'rent free' mean (as in 'living in my head rent free')?",
+    "answers": ["Something you can't stop thinking about", "Free housing", "A boring person", "A forgotten memory"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'era' mean in teen slang (e.g. 'I'm in my villain era')?",
+    "answers": ["A phase or period you're currently in", "A time period in history", "An old song", "A type of fashion"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'based' mean in teen slang?",
+    "answers": ["Confident and not caring what others think", "Grounded or calm", "Based on facts", "Boring"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'gatekeep' mean?",
+    "answers": ["To keep something secret so others can't enjoy it", "To guard a gate", "To share freely", "To compete"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'vibe check' mean?",
+    "answers": ["Assessing someone's mood or energy", "Checking music volume", "Testing a new place", "Asking for a favor"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'main character' mean in teen slang?",
+    "answers": ["Acting like you're the star of your own story", "A video game protagonist", "The most popular person", "A fictional hero"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'NPC' mean when used about a real person?",
+    "answers": ["Someone who acts robotic or without original thought", "A non-paying customer", "A new popular kid", "A naturally positive person"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'ate' mean (as in 'she ate that performance')?",
+    "answers": ["Did it perfectly / crushed it", "Ate food on stage", "Made a mistake", "Was very hungry"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'delulu' mean?",
+    "answers": ["Delusional — believing something unrealistic", "Delightful", "Deliberately rude", "Deeply loyal"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does Homer say when something annoys him?",
+    "answers": ["D'oh!", "Why you little—!", "Mmm... donuts.", "Son of a—!"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is Bart Simpson's famous prank call name that sounds like 'I.P. Freely'?",
+    "answers": ["A name that sounds like a crude phrase", "A celebrity name", "A teacher's name", "A superhero name"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does Homer love to eat more than anything?",
+    "answers": ["Donuts", "Pizza", "Burgers", "Ribs"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is the name of Springfield's school bully?",
+    "answers": ["Nelson Muntz", "Jimbo Jones", "Kearney Zzyzwicz", "Dolph Starbeam"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does Lisa Simpson want to be when she grows up?",
+    "answers": ["President of the United States", "A rock star", "A scientist", "A teacher"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What is the name of Ned Flanders's deceased wife?",
+    "answers": ["Maude", "Edna", "Ruth", "Helen"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'sus' mean in teen slang?",
+    "answers": ["Suspicious", "Super", "Sad", "Successful"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'slaps' mean when talking about a song?",
+    "answers": ["It sounds really good", "It has a loud beat", "It is overplayed", "It is old"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'it's not giving' mean?",
+    "answers": ["It's not working / not impressive", "Nothing is being given away", "It's broken", "It's not funny"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'caught in 4K' mean?",
+    "answers": ["Caught doing something on camera with no excuse", "Arrested", "Caught lying", "Filmed in high definition"],
+    "correctAnswerIndex": 0
+  },
+  {
+    "question": "What does 'pressed' mean in teen slang?",
+    "answers": ["Upset or bothered about something", "Ironed clothes", "Physically pushed", "Very tired"],
+    "correctAnswerIndex": 0
+  }
 ]

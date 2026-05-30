@@ -2,7 +2,6 @@ export type QuestionPrompt = {
     question: string;
     answers: string[];
     correctAnswerIndex: number;
-    id: number;
 };
 
 export interface ITrivia {
