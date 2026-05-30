@@ -318,7 +318,11 @@ export default class Graphics {
     // ── High scores ───────────────────────────────────────────────
 
     showHighScores(scores: { name: string; score: number; cave: string; turns: number; coins: number; arrows: number }[], onStart: () => void): void {
-        const container = document.getElementById("app") ?? document.body;
+        var container = document.getElementById("app");
+        if (container == null) {
+            container = document.body;
+        }
+
         container.innerHTML = "";
         container.style.cssText = "font-family:monospace;max-width:600px;margin:0 auto;padding:16px;";
 
