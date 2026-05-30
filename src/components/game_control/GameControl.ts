@@ -261,14 +261,13 @@ export default class GameControl {
         return startRoom;
     }
 
-    private wakeWumpus(): void {
-        if (Math.random() < 0.5) {
-            const wRoom    = this.map.getRoomLocation(MapObjectType.WUMPUS);
-            const neighbors = this.cave.getConnectedRooms(wRoom);
-            if (neighbors.length > 0) {
-                this.map.setRoomLocation(MapObjectType.WUMPUS, neighbors[Math.floor(Math.random() * neighbors.length)]);
-                this.gfx.updateStatusMessage("You hear the Wumpus stir...");
-            }
+    // Missed arrow always startles the Wumpus into moving one room
+    private moveWumpus(): void {
+        const wRoom = this.map.getRoomLocation(MapObjectType.WUMPUS);
+        const neighbors = this.cave.getConnectedRooms(wRoom);
+        if (neighbors.length > 0) {
+            this.map.setRoomLocation(MapObjectType.WUMPUS, neighbors[Math.floor(Math.random() * neighbors.length)]);
+            this.gfx.updateStatusMessage("You hear the Wumpus roar and move!");
         }
     }
 
@@ -291,7 +290,7 @@ export default class GameControl {
                 await this.endGame(true, "Your arrow flies true — you killed the Wumpus!");
             } else {
                 this.gfx.updateStatusMessage(`Your arrow misses. (${this.player.getResource(PlayerResourceType.ARROWS)} arrows left)`);
-                this.wakeWumpus();
+                this.moveWumpus();
                 if (this.map.getRoomLocation(MapObjectType.WUMPUS) === this.map.getRoomLocation(MapObjectType.PLAYER)) {
                     await this.fightWumpus();
                 } else if (this.player.getResource(PlayerResourceType.ARROWS) <= 0) {
