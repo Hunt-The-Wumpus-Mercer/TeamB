@@ -8,6 +8,24 @@ const MAP_MARGIN = 30;                                  // must be ≥ ROOM_R to
 const MAP_W = MAP_MARGIN * 2 + 5.5 * MAP_COL_W;
 const MAP_H = MAP_MARGIN * 2 + 4   * MAP_ROW_H;
 
+// For a pointy-top hex, face centres lie at angles 0°, 60°, 120°, 180°, 240°, 300°
+// at distance = apothem (= r * √3/2) from the hex centre.
+// Given a direction toward a target, return the point on the nearest face edge.
+const APOTHEM = ROOM_R * Math.sqrt(3) / 2;
+const FACE_ANGLES = [0, 1, 2, 3, 4, 5].map(i => i * Math.PI / 3);
+
+function hexFacePoint(cx: number, cy: number, tx: number, ty: number): [number, number] {
+    const angle = Math.atan2(ty - cy, tx - cx);
+    let bestAngle = FACE_ANGLES[0];
+    let bestDiff = Infinity;
+    for (const fa of FACE_ANGLES) {
+        let diff = Math.abs(angle - fa);
+        if (diff > Math.PI) diff = 2 * Math.PI - diff;
+        if (diff < bestDiff) { bestDiff = diff; bestAngle = fa; }
+    }
+    return [cx + APOTHEM * Math.cos(bestAngle), cy + APOTHEM * Math.sin(bestAngle)];
+}
+
 // Pointy-top hexagon: vertex at top/bottom (angle = 60°*i − 90°)
 function drawHexagon(
     ctx: CanvasRenderingContext2D,
@@ -163,10 +181,14 @@ export default class Graphics {
             connected.forEach(cr => {
                 if (!this.revealedRooms.has(cr)) return;
                 const [x2, y2] = roomPos(cr);
+                // Skip wrapping connections that span most of the canvas
                 if (Math.abs(x2 - x1) > MAP_COL_W * 3 || Math.abs(y2 - y1) > MAP_ROW_H * 3) return;
+                // Draw from face centre to face centre so lines never exit through a vertex
+                const [fx1, fy1] = hexFacePoint(x1, y1, x2, y2);
+                const [fx2, fy2] = hexFacePoint(x2, y2, x1, y1);
                 ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
+                ctx.moveTo(fx1, fy1);
+                ctx.lineTo(fx2, fy2);
                 ctx.stroke();
             });
         });
