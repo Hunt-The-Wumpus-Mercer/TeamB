@@ -11,7 +11,7 @@ export default class HighScores implements IHighScores {
             if (stored) {
                 const parsed: HighScoreEntry[] = JSON.parse(stored);
                 // Drop any entries that predate the cave field
-                this.scores = parsed.filter(e => e.cave != null);
+                this.scores = parsed.filter(e => e.cave != null && e.turns != null);
             } else {
                 this.scores = [];
             }
@@ -20,8 +20,8 @@ export default class HighScores implements IHighScores {
         }
     }
 
-    async addScore(name: string, score: number, cave: string): Promise<void> {
-        this.scores.push({ name: name.trim(), score, cave });
+    async addScore(name: string, score: number, cave: string, turns: number, coins: number, arrows: number): Promise<void> {
+        this.scores.push({ name: name.trim(), score, cave, turns, coins, arrows });
         this.scores.sort((a, b) => b.score - a.score);
         if (this.scores.length > this.maxEntries) {
             this.scores = this.scores.slice(0, this.maxEntries);

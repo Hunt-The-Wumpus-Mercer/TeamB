@@ -458,8 +458,14 @@ export default class GameControl {
 
         this.gfx.showGameOver(won, message, score, async () => {
             if (won) {
-                // #6 — cave name saved with score
-                await this.scores.addScore(this.player.getPlayerName(), score, this.caveName);
+                await this.scores.addScore(
+                    this.player.getPlayerName(),
+                    score,
+                    this.caveName,
+                    this.player.getResource(PlayerResourceType.TURNS),
+                    this.player.getResource(PlayerResourceType.COINS),
+                    this.player.getResource(PlayerResourceType.ARROWS),
+                );
             }
             await this.scores.load();
             this.gfx.showHighScores(this.scores.getHighScores(), () => this.startSetup());

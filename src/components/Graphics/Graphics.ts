@@ -295,7 +295,7 @@ export default class Graphics {
 
     // ── High scores ───────────────────────────────────────────────
 
-    showHighScores(scores: { name: string; score: number; cave: string }[], onStart: () => void): void {
+    showHighScores(scores: { name: string; score: number; cave: string; turns: number; coins: number; arrows: number }[], onStart: () => void): void {
         const container = document.getElementById("app") ?? document.body;
         container.innerHTML = "";
         container.style.cssText = "font-family:monospace;max-width:600px;margin:0 auto;padding:16px;";
@@ -317,7 +317,7 @@ export default class Graphics {
             const table = document.createElement("table");
             table.style.cssText = "border-collapse:collapse;width:100%;margin-bottom:16px;";
             const header = table.insertRow();
-            ["#", "Name", "Score", "Cave"].forEach(h => {
+            ["#", "Name", "Score", "Cave", "Turns (N)", "Coins (G)", "Arrows (A)"].forEach(h => {
                 const th = document.createElement("th");
                 th.style.cssText = "border:1px solid #000;padding:4px 8px;text-align:left;";
                 th.textContent = h;
@@ -326,7 +326,7 @@ export default class Graphics {
             scores.forEach((s, i) => {
                 const row = table.insertRow();
                 const caveDisplay = s.cave ? s.cave.replace("cave", "") : "—";
-                [String(i + 1), s.name, String(s.score), caveDisplay].forEach(val => {
+                [String(i + 1), s.name, String(s.score), caveDisplay, String(s.turns ?? "—"), String(s.coins ?? "—"), String(s.arrows ?? "—")].forEach(val => {
                     const td = row.insertCell();
                     td.style.cssText = "border:1px solid #000;padding:4px 8px;";
                     td.textContent = val;
