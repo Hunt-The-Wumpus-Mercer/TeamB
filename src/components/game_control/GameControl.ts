@@ -6,6 +6,8 @@ import { PlayerResourceType } from "../Map_and_PLayer/IPLayer";
 import Trivia from "../trivia/Trivia";
 import HighScores from "../high_scores/HighScores";
 import Graphics from "../Graphics/Graphics";
+import SoundManager from "../sound/sound";
+import { SoundEventType } from "../sound/ISound";
 import { CaveRoomDirections } from "../shared/CaveRoomDirections";
 
 const DIR_NAMES = [
@@ -24,6 +26,7 @@ export default class GameControl {
     private trivia   = new Trivia();
     private scores   = new HighScores();
     private gfx      = new Graphics();
+    private sound    = new SoundManager();
 
     private container!: HTMLElement;
     private startRoom  = 1;
@@ -114,6 +117,9 @@ export default class GameControl {
 
         this.gfx.updateWarnings(warnings);
         if (warnings.length > 0) this.gfx.updateStatusMessage(warnings.join("  "));
+        if (warnings.includes("I smell a Wumpus!"))  this.sound.playSound(SoundEventType.WARNING_WUMPUS);
+        if (warnings.includes("Bats Nearby"))         this.sound.playSound(SoundEventType.WARNING_BAT);
+        if (warnings.includes("I feel a draft"))      this.sound.playSound(SoundEventType.WARNING_PIT);
     }
 
     // ── Movement ─────────────────────────────────────────────────
@@ -132,6 +138,7 @@ export default class GameControl {
         this.map.setRoomLocation(MapObjectType.PLAYER, target);
         this.player.incrementResource(PlayerResourceType.TURNS);
         const gotCoin = this.player.collectCoin();
+        this.sound.playSound(SoundEventType.WALK);
         this.gfx.updateStatusMessage(`You move to room ${target}.${gotCoin ? " (+1 coin)" : " (no coins left in cave)"}`);
 
         // #5 — trivia fact on every move
@@ -276,6 +283,7 @@ export default class GameControl {
             if (!target) return;
 
             this.player.decrementResource(PlayerResourceType.ARROWS);
+            this.sound.playSound(SoundEventType.SHOOT_ARROW);
             this.refreshUI();
 
             if (target === this.map.getRoomLocation(MapObjectType.WUMPUS)) {
@@ -446,6 +454,7 @@ export default class GameControl {
 
     private async endGame(won: boolean, message: string): Promise<void> {
         this.gameOver = true;
+        this.sound.playSound(won ? SoundEventType.WIN : SoundEventType.LOSE);
         const score = this.player.getScore();
 
         this.gfx.showGameOver(won, message, score, async () => {

@@ -1,10 +1,33 @@
-// Map layout: 5 rows × 6 cols, odd rows offset right by half a column
-const MAP_COL_W  = 52;
-const MAP_ROW_H  = 42;
-const MAP_MARGIN = 30;
-const ROOM_R     = 14;
+// Map layout: 5 rows × 6 cols, odd rows offset right by half a column.
+// Pointy-top hexagons tile perfectly with row-offset grids.
+// Touching hex geometry: col spacing = r*√3, row spacing = r*1.5
+const ROOM_R     = 26;
+const MAP_COL_W  = Math.round(ROOM_R * Math.sqrt(3)); // ≈ 45 — exact touching distance
+const MAP_ROW_H  = Math.round(ROOM_R * 1.5);          // = 39 — exact touching distance
+const MAP_MARGIN = 30;                                  // must be ≥ ROOM_R to keep top hex in canvas
 const MAP_W = MAP_MARGIN * 2 + 5.5 * MAP_COL_W;
 const MAP_H = MAP_MARGIN * 2 + 4   * MAP_ROW_H;
+
+// Pointy-top hexagon: vertex at top/bottom (angle = 60°*i − 90°)
+function drawHexagon(
+    ctx: CanvasRenderingContext2D,
+    cx: number, cy: number, r: number,
+    fillStyle: string, strokeStyle: string, lineWidth: number
+): void {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 2; // −90° start → top vertex
+        const x = cx + r * Math.cos(angle);
+        const y = cy + r * Math.sin(angle);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = fillStyle;
+    ctx.fill();
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lineWidth;
+    ctx.stroke();
+}
 
 function roomPos(room: number): [number, number] {
     const idx = room - 1;
@@ -151,15 +174,13 @@ export default class Graphics {
         this.revealedRooms.forEach((_, room) => {
             const [x, y] = roomPos(room);
             const isCurrent = room === this.currentRoom;
-            ctx.beginPath();
-            ctx.arc(x, y, ROOM_R, 0, Math.PI * 2);
-            ctx.fillStyle = isCurrent ? "#000" : "#fff";
-            ctx.fill();
-            ctx.strokeStyle = "#000";
-            ctx.lineWidth = isCurrent ? 3 : 1.5;
-            ctx.stroke();
+            drawHexagon(ctx, x, y, ROOM_R,
+                isCurrent ? "#000" : "#fff",
+                "#000",
+                isCurrent ? 3 : 1.5
+            );
             ctx.fillStyle = isCurrent ? "#fff" : "#000";
-            ctx.font = "bold 10px monospace";
+            ctx.font = "bold 11px monospace";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(String(room), x, y);
