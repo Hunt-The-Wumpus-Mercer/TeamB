@@ -109,11 +109,15 @@ export default class Graphics {
     // drawn to a hidden offscreen canvas during loading
     private wumpusCanvas: HTMLCanvasElement | null = null;
 
+    // The donut image used instead of confetti rectangles on a win
+    private donutImg = new Image();
+
     constructor() {
         // Start loading both sprites as soon as the class is created.
         // Vite resolves the URLs so they still work in the production build.
         this.homerImg.src  = new URL('../../assets/Homer_Simpson_2006.png', import.meta.url).href;
         this.wumpusImg.src = new URL('../../assets/Buns.webp',              import.meta.url).href;
+        this.donutImg.src  = new URL('../../assets/doughnut.png',           import.meta.url).href;
 
         // Once Mr Burns has loaded, strip his white background and refresh the map
         this.wumpusImg.onload = () => {
@@ -225,14 +229,22 @@ export default class Graphics {
             const p = spawn(); p.y = Math.random() * H; return p;
         });
 
-        // Draw a single particle — either a rotating rectangle or a blood teardrop
+        // Draw a single particle — either a spinning donut or a blood teardrop
         const draw = (p: P) => {
             if (won) {
                 ctx.save();
                 ctx.translate(p.x, p.y);
                 ctx.rotate(p.rot);
-                ctx.fillStyle = p.color;
-                ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                // Draw the donut image centred on the particle position
+                if (this.donutImg.complete && this.donutImg.naturalWidth > 0) {
+                    ctx.drawImage(this.donutImg, -p.w / 2, -p.h / 2, p.w, p.h);
+                } else {
+                    // Fallback to a pink circle if the image hasn't loaded yet
+                    ctx.beginPath();
+                    ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
+                    ctx.fillStyle = "#ff69b4";
+                    ctx.fill();
+                }
                 ctx.restore();
             } else {
                 const r = p.w;
