@@ -120,9 +120,9 @@ export default class Graphics {
         this.homerImg.src  = new URL('../../assets/Homer_Simpson_2006.png', import.meta.url).href;
         this.wumpusImg.src = new URL('../../assets/Buns.webp',              import.meta.url).href;
         this.donutImg.src  = new URL('../../assets/doughnut.png',           import.meta.url).href;
-        // Strip any near-white/near-grey background pixels once the image has loaded
+        // Remove the background of the donut image using a flood-fill from the corners
         this.donutImg.onload = () => {
-            this.donutCanvas = this.removeWhiteBackground(this.donutImg);
+            this.donutCanvas = this.floodFillRemoveBackground(this.donutImg);
         };
 
         // Once Mr Burns has loaded, strip his white background and refresh the map
@@ -147,6 +147,65 @@ export default class Graphics {
             if (px[i] > 230 && px[i+1] > 230 && px[i+2] > 230) px[i+3] = 0;
         }
         cx.putImageData(data, 0, 0);
+        return c;
+    }
+
+    // Removes the background of an image by flood-filling from every corner pixel.
+    // Samples the top-left corner colour, then erases all connected pixels within
+    // a colour tolerance — regardless of the exact background colour.
+    // Much more reliable than a fixed brightness threshold.
+    private floodFillRemoveBackground(img: HTMLImageElement): HTMLCanvasElement {
+        const c  = document.createElement("canvas");
+        c.width  = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const cx = c.getContext("2d")!;
+        cx.drawImage(img, 0, 0);
+
+        const W = c.width, H = c.height;
+        const imageData = cx.getImageData(0, 0, W, H);
+        const d = imageData.data; // flat R,G,B,A array
+
+        // Sample the background colour from the top-left corner pixel
+        const bgR = d[0], bgG = d[1], bgB = d[2];
+        const TOLERANCE = 40; // how much a pixel can differ and still count as background
+
+        const isBg = (i: number) =>
+            d[i+3] > 0 && // skip already-transparent pixels
+            Math.abs(d[i]   - bgR) <= TOLERANCE &&
+            Math.abs(d[i+1] - bgG) <= TOLERANCE &&
+            Math.abs(d[i+2] - bgB) <= TOLERANCE;
+
+        // BFS flood-fill starting from all four corners simultaneously
+        const visited = new Uint8Array(W * H);
+        const queue: number[] = [];
+
+        const tryEnqueue = (px: number) => {
+            if (px >= 0 && px < W * H && !visited[px] && isBg(px * 4)) {
+                visited[px] = 1;
+                queue.push(px);
+            }
+        };
+
+        // Seed from all four corners
+        tryEnqueue(0);
+        tryEnqueue(W - 1);
+        tryEnqueue(W * (H - 1));
+        tryEnqueue(W * H - 1);
+
+        while (queue.length > 0) {
+            const px = queue.pop()!;
+            d[px * 4 + 3] = 0; // make this pixel transparent
+
+            const x = px % W;
+            const y = Math.floor(px / W);
+
+            if (x > 0)   tryEnqueue(px - 1); // left
+            if (x < W-1) tryEnqueue(px + 1); // right
+            if (y > 0)   tryEnqueue(px - W); // up
+            if (y < H-1) tryEnqueue(px + W); // down
+        }
+
+        cx.putImageData(imageData, 0, 0);
         return c;
     }
 
@@ -200,7 +259,7 @@ export default class Graphics {
         const canvas       = document.createElement("canvas");
         canvas.width       = window.innerWidth;
         canvas.height      = window.innerHeight;
-        canvas.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:190;mix-blend-mode:multiply;";
+        canvas.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:190;";
         document.body.appendChild(canvas);
         this.particleCanvas = canvas;
 
