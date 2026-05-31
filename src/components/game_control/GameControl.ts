@@ -562,6 +562,8 @@ export default class GameControl {
     private onQuitClick(): void {
         if (this.gameOver) return;
         this.gameOver = true;
+        // Start music within this click gesture before navigating away
+        this.gfx.unlockAndPlayIntroMusic();
         this.gfx.showHighScores(this.scores.getHighScores(), () => this.startSetup());
     }
 

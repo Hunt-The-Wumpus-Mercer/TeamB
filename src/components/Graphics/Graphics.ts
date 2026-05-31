@@ -642,7 +642,7 @@ export default class Graphics {
 
         const title = document.createElement("h1");
         title.style.cssText = "font-size:clamp(2rem,6vw,4rem);margin-bottom:0.25em;letter-spacing:0.05em;";
-        title.textContent   = "HUNT THE WUMPUS";
+        title.textContent   = "Hunt the Wumpus - Simpsons Edition!";
         container.appendChild(title);
 
         const sub = document.createElement("p");
@@ -738,7 +738,7 @@ export default class Graphics {
 
         const title = document.createElement("h1");
         title.style.cssText = "border-bottom:3px solid #000;padding-bottom:8px;";
-        title.textContent   = "HUNT THE WUMPUS";
+        title.textContent   = "Hunt the Wumpus - Simpsons Edition!";
         container.appendChild(title);
 
         const sub = document.createElement("h2");
