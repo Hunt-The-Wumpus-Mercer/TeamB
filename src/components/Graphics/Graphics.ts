@@ -83,7 +83,7 @@ export default class Graphics {
 
     constructor() {
         this.homerImg.src  = new URL('../../assets/Homer_Simpson_2006.png', import.meta.url).href;
-        this.wumpusImg.src = new URL('../../assets/wumpus.webp',            import.meta.url).href;
+        this.wumpusImg.src = new URL('../../assets/Buns.webp',            import.meta.url).href;
         this.wumpusImg.onload = () => {
             this.wumpusCanvas = this.removeWhiteBackground(this.wumpusImg);
             this.drawMap();
@@ -572,7 +572,7 @@ export default class Graphics {
         const wumpusWrap = document.createElement("div");
         wumpusWrap.className = "intro-sprite-wrap intro-sprite-wrap-right";
         const wumpus = document.createElement("img");
-        wumpus.src = new URL('../../assets/wumpus.webp', import.meta.url).href;
+        wumpus.src = new URL('../../assets/Buns.webp', import.meta.url).href;
         wumpus.className = "intro-sprite intro-sprite-wumpus";
         wumpusWrap.appendChild(wumpus);
         document.body.appendChild(wumpusWrap);
