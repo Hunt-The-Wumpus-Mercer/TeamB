@@ -376,33 +376,50 @@ export default class Graphics {
                     0%, 100% { transform: translateY(0); }
                     50%       { transform: translateY(-40px); }
                 }
-                .intro-sprite {
+                /* Wrapper fills the gap between screen edge and the 600px leaderboard */
+                .intro-sprite-wrap {
                     position: fixed;
                     bottom: 60px;
-                    width: 140px;
-                    animation: wumpusBounce 0.9s ease-in-out infinite;
+                    display: flex;
+                    justify-content: center;
+                    align-items: flex-end;
+                    width: calc((100vw - 600px) / 2);
                     pointer-events: none;
                     z-index: 0;
                 }
-                .intro-sprite-homer  { left: 24px; }
-                .intro-sprite-wumpus { right: 24px; mix-blend-mode: multiply; }
+                .intro-sprite-wrap-left  { left: 0; }
+                .intro-sprite-wrap-right { right: 0; }
+                /* Both images same size; animation sits on the img */
+                .intro-sprite {
+                    width: 150px;
+                    height: 150px;
+                    object-fit: contain;
+                    animation: wumpusBounce 0.9s ease-in-out infinite;
+                }
+                .intro-sprite-wumpus { mix-blend-mode: multiply; }
             `;
             document.head.appendChild(style);
         }
 
+        const homerWrap = document.createElement("div");
+        homerWrap.className = "intro-sprite-wrap intro-sprite-wrap-left";
         const homer = document.createElement("img");
         homer.src = new URL('../../assets/Homer_Simpson_2006.png', import.meta.url).href;
-        homer.className = "intro-sprite intro-sprite-homer";
-        document.body.appendChild(homer);
+        homer.className = "intro-sprite";
+        homerWrap.appendChild(homer);
+        document.body.appendChild(homerWrap);
 
+        const wumpusWrap = document.createElement("div");
+        wumpusWrap.className = "intro-sprite-wrap intro-sprite-wrap-right";
         const wumpus = document.createElement("img");
         wumpus.src = new URL('../../assets/wumpus.webp', import.meta.url).href;
         wumpus.className = "intro-sprite intro-sprite-wumpus";
-        document.body.appendChild(wumpus);
+        wumpusWrap.appendChild(wumpus);
+        document.body.appendChild(wumpusWrap);
     }
 
     private removeBouncingSprites(): void {
-        document.querySelectorAll(".intro-sprite").forEach(el => el.remove());
+        document.querySelectorAll(".intro-sprite-wrap").forEach(el => el.remove());
     }
 
     // ── High scores ───────────────────────────────────────────────
