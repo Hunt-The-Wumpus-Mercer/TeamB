@@ -110,7 +110,9 @@ export default class Graphics {
     private wumpusCanvas: HTMLCanvasElement | null = null;
 
     // The donut image used instead of confetti rectangles on a win
-    private donutImg = new Image();
+    private donutImg    = new Image();
+    // Background-removed version of the donut, drawn to a hidden offscreen canvas
+    private donutCanvas: HTMLCanvasElement | null = null;
 
     constructor() {
         // Start loading both sprites as soon as the class is created.
@@ -118,6 +120,10 @@ export default class Graphics {
         this.homerImg.src  = new URL('../../assets/Homer_Simpson_2006.png', import.meta.url).href;
         this.wumpusImg.src = new URL('../../assets/Buns.webp',              import.meta.url).href;
         this.donutImg.src  = new URL('../../assets/doughnut.png',           import.meta.url).href;
+        // Strip any near-white/near-grey background pixels once the image has loaded
+        this.donutImg.onload = () => {
+            this.donutCanvas = this.removeWhiteBackground(this.donutImg);
+        };
 
         // Once Mr Burns has loaded, strip his white background and refresh the map
         this.wumpusImg.onload = () => {
@@ -211,9 +217,9 @@ export default class Graphics {
             vx: (Math.random() - 0.5) * 2.5,
             vy: 2.5 + Math.random() * 3.5,
             rot: Math.random() * Math.PI * 2,
-            rotV: (Math.random() - 0.5) * 0.15,
-            w: 6 + Math.random() * 9,
-            h: 10 + Math.random() * 12,
+            rotV: (Math.random() - 0.5) * 0.08,
+            w: 55 + Math.random() * 35,   // 55–90 px — donuts are big and round
+            h: 55 + Math.random() * 35,
             color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
         } : {
             x: Math.random() * W, y: -15,
@@ -235,11 +241,12 @@ export default class Graphics {
                 ctx.save();
                 ctx.translate(p.x, p.y);
                 ctx.rotate(p.rot);
-                // Draw the donut image centred on the particle position
-                if (this.donutImg.complete && this.donutImg.naturalWidth > 0) {
-                    ctx.drawImage(this.donutImg, -p.w / 2, -p.h / 2, p.w, p.h);
+                // Draw the background-stripped donut centred on the particle position
+                const donutSrc = this.donutCanvas ?? (this.donutImg.complete ? this.donutImg : null);
+                if (donutSrc) {
+                    ctx.drawImage(donutSrc, -p.w / 2, -p.h / 2, p.w, p.h);
                 } else {
-                    // Fallback to a pink circle if the image hasn't loaded yet
+                    // Fallback pink circle while image loads
                     ctx.beginPath();
                     ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
                     ctx.fillStyle = "#ff69b4";
