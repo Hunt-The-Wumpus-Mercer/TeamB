@@ -127,6 +127,7 @@ export default class Graphics {
             this.introAudioCtx = ac;
             ac.resume().then(() => {
                 if (this.introAudioCtx === ac && ac.state === "running") {
+                    document.getElementById("music-note")?.remove();
                     this.scheduleGladiators();
                 }
             }).catch(() => {});
@@ -548,7 +549,7 @@ export default class Graphics {
             const btn = document.createElement("button");
             btn.style.cssText = "display:block;width:100%;margin-bottom:10px;padding:10px;border:2px solid #000;background:#fff;font-family:monospace;font-size:15px;cursor:pointer;text-align:left;";
             btn.textContent = `Cave ${i + 1}  (${cave})`;
-            btn.addEventListener("click", () => onPick(cave));
+            btn.addEventListener("click", () => { this.stopIntroMusic(); onPick(cave); });
             container.appendChild(btn);
         });
     }
@@ -629,6 +630,17 @@ export default class Graphics {
         title.textContent = "HUNT THE WUMPUS";
         container.appendChild(title);
 
+        // Music note: browsers require a click before audio can play.
+        // If the AudioContext isn't already running (i.e. first page load),
+        // show a tiny hint so the user knows music is coming.
+        if (!this.introAudioCtx || this.introAudioCtx.state !== "running") {
+            const musicNote = document.createElement("p");
+            musicNote.id = "music-note";
+            musicNote.style.cssText = "font-size:12px;opacity:0.5;margin:0 0 8px;";
+            musicNote.textContent = "🔊 Music plays on first click";
+            container.appendChild(musicNote);
+        }
+
         const sub = document.createElement("h2");
         sub.textContent = "High Scores";
         container.appendChild(sub);
@@ -689,7 +701,6 @@ export default class Graphics {
     // ── Setup prompt ─────────────────────────────────────────────
 
     showSetupPrompt(onSubmit: (name: string) => void): void {
-        this.stopIntroMusic();
         this.removeBouncingSprites();
         const container = document.getElementById("app") ?? document.body;
         container.innerHTML = "";
