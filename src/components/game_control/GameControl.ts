@@ -36,7 +36,9 @@ export default class GameControl {
     async init(container: HTMLElement): Promise<void> {
         this.container = container;
         await this.scores.load();
-        this.gfx.showHighScores(this.scores.getHighScores(), () => this.startSetup());
+        this.gfx.showSplashScreen(() => {
+            this.gfx.showHighScores(this.scores.getHighScores(), () => this.startSetup());
+        });
     }
 
     private startSetup(): void {

@@ -108,102 +108,32 @@ export default class Graphics {
 
     // ── Intro music (Entrance of the Gladiators) ─────────────────
 
-    private introAudioCtx: AudioContext | null = null;
-    private introLoopTimeout: ReturnType<typeof setTimeout> | null = null;
+    private introAudio: HTMLAudioElement | null = null;
 
-    // Must be called from inside a click/keydown handler so the browser
-    // allows AudioContext creation and resume (autoplay policy).
+    private readonly gladiatorsUrl = new URL('../../assets/gladiators.m4a', import.meta.url).href;
+
+    // Call from inside a click handler — starts the audio
     unlockAndPlayIntroMusic(): void {
-        // If a running context already exists just make sure notes are scheduled
-        if (this.introAudioCtx && this.introAudioCtx.state === "running") {
-            if (this.introLoopTimeout === null) this.scheduleGladiators();
-            return;
+        if (!this.introAudio) {
+            this.introAudio = new Audio(this.gladiatorsUrl);
+            this.introAudio.loop = true;
+            this.introAudio.volume = 0.6;
         }
-        // Close any stale context
-        if (this.introAudioCtx) { this.introAudioCtx.close().catch(() => {}); this.introAudioCtx = null; }
-
-        try {
-            const ac = new AudioContext();
-            this.introAudioCtx = ac;
-            ac.resume().then(() => {
-                if (this.introAudioCtx === ac && ac.state === "running") {
-                    document.getElementById("music-note")?.remove();
-                    this.scheduleGladiators();
-                }
-            }).catch(() => {});
-        } catch { /* AudioContext unavailable */ }
+        if (this.introAudio.paused) {
+            this.introAudio.play().catch(() => {});
+        }
     }
 
-    private scheduleGladiators(): void {
-        const ac = this.introAudioCtx;
-        if (!ac || ac.state !== "running") return;
-
-        const e = 60 / 160 / 2;
-        const q = e * 2;
-        const h = q * 2;
-
-        const N: Record<string, number> = {
-            'F4': 349.23, 'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30,
-            'A4': 440.00, 'A#4': 466.16, 'B4': 493.88, 'C5': 523.25,
-        };
-
-        const melody: [string, number][] = [
-            ['G4',e],['G4',e],['G#4',e],['A4',e],
-            ['A4',e],['A#4',e],['B4',e],['C5',q],
-            ['G4',e],['G#4',e],['A4',e],['A#4',e],
-            ['B4',h],
-            ['F4',e],['F4',e],['F#4',e],['G4',e],
-            ['G4',e],['G#4',e],['A4',e],['A#4',q],
-            ['F4',e],['F#4',e],['G4',e],['G#4',e],
-            ['A4',h],
-            ['G#4',e],['A4',e],['A#4',e],['B4',e],
-            ['G4',e],['G4',e],['G#4',e],['A4',e],
-            ['A#4',e],['B4',e],['G4',e],['G4',e],
-            ['G#4',e],['A4',e],['A#4',e],['B4',e],
-            ['G4',h],
-        ];
-
-        const master = ac.createGain();
-        master.gain.value = 0.45;
-        master.connect(ac.destination);
-
-        let t = ac.currentTime + 0.05;
-        let total = 0;
-
-        for (const [name, dur] of melody) {
-            const osc = ac.createOscillator();
-            const env = ac.createGain();
-            osc.connect(env);
-            env.connect(master);
-            osc.type = "sawtooth";
-            osc.frequency.value = N[name];
-            env.gain.setValueAtTime(1, t);
-            env.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.88);
-            osc.start(t);
-            osc.stop(t + dur);
-            t += dur;
-            total += dur;
-        }
-
-        this.introLoopTimeout = setTimeout(
-            () => this.scheduleGladiators(),
-            (total - 0.15) * 1000
-        );
-    }
-
-    // Called by showHighScores — does NOT create AudioContext (no gesture here)
     playIntroMusic(): void {
-        // If already running (context was unlocked by a prior gesture), schedule
-        if (this.introAudioCtx?.state === "running" && this.introLoopTimeout === null) {
-            this.scheduleGladiators();
-        }
-        // Otherwise music will start the moment unlockAndPlayIntroMusic() is called
-        // from one of the button/key handlers below.
+        // No-op — music is started explicitly via unlockAndPlayIntroMusic()
+        // which must be called from within a user gesture (click handler).
     }
 
     stopIntroMusic(): void {
-        if (this.introLoopTimeout !== null) { clearTimeout(this.introLoopTimeout); this.introLoopTimeout = null; }
-        if (this.introAudioCtx) { this.introAudioCtx.close().catch(() => {}); this.introAudioCtx = null; }
+        if (this.introAudio) {
+            this.introAudio.pause();
+            this.introAudio.currentTime = 0;
+        }
     }
 
     // ── Particle effects (confetti / blood) ───────────────────────
@@ -554,6 +484,44 @@ export default class Graphics {
         });
     }
 
+    // ── Splash screen ────────────────────────────────────────────
+
+    showSplashScreen(onEnter: () => void): void {
+        const container = document.getElementById("app") ?? document.body;
+        container.innerHTML = "";
+        container.style.cssText = "font-family:monospace;background:#fff;color:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;padding:0;max-width:100%;text-align:center;";
+
+        const title = document.createElement("h1");
+        title.style.cssText = "font-size:clamp(2rem,6vw,4rem);margin-bottom:0.25em;letter-spacing:0.05em;";
+        title.textContent = "HUNT THE WUMPUS";
+        container.appendChild(title);
+
+        const sub = document.createElement("p");
+        sub.style.cssText = "font-size:1.1rem;margin-bottom:2.5em;opacity:0.6;";
+        sub.textContent = "A game of caves, arrows, and a very unpleasant creature.";
+        container.appendChild(sub);
+
+        const btn = document.createElement("button");
+        btn.style.cssText = [
+            "padding:18px 48px",
+            "border:4px solid #000",
+            "background:#fff",
+            "font-family:monospace",
+            "font-size:1.4rem",
+            "cursor:pointer",
+            "letter-spacing:0.1em",
+            "transition:background 0.15s,color 0.15s",
+        ].join(";");
+        btn.textContent = "CLICK HERE";
+        btn.addEventListener("mouseenter", () => { btn.style.background = "#000"; btn.style.color = "#fff"; });
+        btn.addEventListener("mouseleave", () => { btn.style.background = "#fff"; btn.style.color = "#000"; });
+        btn.addEventListener("click", () => {
+            this.unlockAndPlayIntroMusic();
+            onEnter();
+        });
+        container.appendChild(btn);
+    }
+
     // ── Bouncing intro sprites ────────────────────────────────────
 
     private addBouncingSprites(): void {
@@ -630,16 +598,6 @@ export default class Graphics {
         title.textContent = "HUNT THE WUMPUS";
         container.appendChild(title);
 
-        // Music note: browsers require a click before audio can play.
-        // If the AudioContext isn't already running (i.e. first page load),
-        // show a tiny hint so the user knows music is coming.
-        if (!this.introAudioCtx || this.introAudioCtx.state !== "running") {
-            const musicNote = document.createElement("p");
-            musicNote.id = "music-note";
-            musicNote.style.cssText = "font-size:12px;opacity:0.5;margin:0 0 8px;";
-            musicNote.textContent = "🔊 Music plays on first click";
-            container.appendChild(musicNote);
-        }
 
         const sub = document.createElement("h2");
         sub.textContent = "High Scores";
