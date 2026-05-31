@@ -200,7 +200,7 @@ export default class Graphics {
         const canvas       = document.createElement("canvas");
         canvas.width       = window.innerWidth;
         canvas.height      = window.innerHeight;
-        canvas.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:190;";
+        canvas.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:190;mix-blend-mode:multiply;";
         document.body.appendChild(canvas);
         this.particleCanvas = canvas;
 
