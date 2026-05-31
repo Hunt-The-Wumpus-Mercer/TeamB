@@ -110,34 +110,30 @@ export default class Graphics {
 
     private introAudioCtx: AudioContext | null = null;
     private introLoopTimeout: ReturnType<typeof setTimeout> | null = null;
+    private introMuteHint: HTMLElement | null = null;
 
     private scheduleGladiators(): void {
         const ac = this.introAudioCtx;
-        if (!ac || ac.state === "closed") return;
+        if (!ac || ac.state !== "running") return;
 
-        const e = 60 / 160 / 2;   // eighth note at 160 BPM  ≈ 0.1875 s
-        const q = e * 2;           // quarter
-        const h = q * 2;           // half
+        const e = 60 / 160 / 2;   // eighth note at 160 BPM ≈ 0.1875 s
+        const q = e * 2;
+        const h = q * 2;
 
-        // Frequencies
         const N: Record<string, number> = {
             'F4': 349.23, 'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30,
             'A4': 440.00, 'A#4': 466.16, 'B4': 493.88, 'C5': 523.25,
         };
 
-        // Entry of the Gladiators — main theme (simplified, loops)
         const melody: [string, number][] = [
-            // Part A — phrase 1
             ['G4',e],['G4',e],['G#4',e],['A4',e],
             ['A4',e],['A#4',e],['B4',e],['C5',q],
             ['G4',e],['G#4',e],['A4',e],['A#4',e],
             ['B4',h],
-            // Part A — phrase 2
             ['F4',e],['F4',e],['F#4',e],['G4',e],
             ['G4',e],['G#4',e],['A4',e],['A#4',q],
             ['F4',e],['F#4',e],['G4',e],['G#4',e],
             ['A4',h],
-            // Part B
             ['G#4',e],['A4',e],['A#4',e],['B4',e],
             ['G4',e],['G4',e],['G#4',e],['A4',e],
             ['A#4',e],['B4',e],['G4',e],['G4',e],
@@ -145,63 +141,81 @@ export default class Graphics {
             ['G4',h],
         ];
 
+        // Master gain — volume loud enough to actually hear
+        const master = ac.createGain();
+        master.gain.value = 0.4;
+        master.connect(ac.destination);
+
         let t = ac.currentTime + 0.05;
         let total = 0;
 
         for (const [name, dur] of melody) {
             const freq = N[name];
             const osc  = ac.createOscillator();
-            const gain = ac.createGain();
-            osc.connect(gain);
-            gain.connect(ac.destination);
+            const env  = ac.createGain();
+            osc.connect(env);
+            env.connect(master);
             osc.type = "sawtooth";
             osc.frequency.value = freq;
-            gain.gain.setValueAtTime(0.12, t);
-            gain.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.85);
+            env.gain.setValueAtTime(1, t);
+            env.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.88);
             osc.start(t);
             osc.stop(t + dur);
             t += dur;
             total += dur;
         }
 
-        // Loop: reschedule just before the last note ends
         this.introLoopTimeout = setTimeout(
             () => this.scheduleGladiators(),
-            (total - 0.1) * 1000
+            (total - 0.15) * 1000
         );
     }
 
     playIntroMusic(): void {
         this.stopIntroMusic();
         try {
-            this.introAudioCtx = new AudioContext();
-            const start = () => {
-                this.introAudioCtx?.resume().then(() => this.scheduleGladiators()).catch(() => {});
+            const ac = new AudioContext();
+            this.introAudioCtx = ac;
+
+            const tryPlay = () => {
+                if (this.introAudioCtx !== ac) return; // already replaced/stopped
+                if (ac.state === "running" && this.introLoopTimeout === null) {
+                    this.removeMuteHint();
+                    this.scheduleGladiators();
+                }
             };
-            if (this.introAudioCtx.state === "suspended") {
-                // Browser blocks autoplay until first user interaction
-                const handler = () => {
-                    start();
-                    document.removeEventListener("click",   handler);
-                    document.removeEventListener("keydown", handler);
-                };
-                document.addEventListener("click",   handler);
-                document.addEventListener("keydown", handler);
-            } else {
-                start();
-            }
+
+            // Fire whenever the context transitions to running
+            ac.addEventListener("statechange", tryPlay);
+            // Also try immediately (works when called from within a user gesture)
+            ac.resume().then(tryPlay).catch(() => {});
+
+            // Show a small unmute hint for first-page-load visitors
+            if (ac.state === "suspended") this.showMuteHint();
+
         } catch { /* AudioContext unavailable */ }
     }
 
     stopIntroMusic(): void {
-        if (this.introLoopTimeout !== null) {
-            clearTimeout(this.introLoopTimeout);
-            this.introLoopTimeout = null;
-        }
-        if (this.introAudioCtx) {
-            this.introAudioCtx.close().catch(() => {});
-            this.introAudioCtx = null;
-        }
+        if (this.introLoopTimeout !== null) { clearTimeout(this.introLoopTimeout); this.introLoopTimeout = null; }
+        if (this.introAudioCtx) { this.introAudioCtx.close().catch(() => {}); this.introAudioCtx = null; }
+        this.removeMuteHint();
+    }
+
+    private showMuteHint(): void {
+        this.removeMuteHint();
+        const hint = document.createElement("div");
+        hint.id = "mute-hint";
+        hint.style.cssText = "position:fixed;bottom:12px;left:50%;transform:translateX(-50%);font-family:monospace;font-size:13px;opacity:0.6;pointer-events:none;z-index:5;";
+        hint.textContent = "🔊 Click anywhere to enable music";
+        document.body.appendChild(hint);
+        this.introMuteHint = hint;
+    }
+
+    private removeMuteHint(): void {
+        this.introMuteHint?.remove();
+        this.introMuteHint = null;
+        document.getElementById("mute-hint")?.remove();
     }
 
     // ── Particle effects (confetti / blood) ───────────────────────
