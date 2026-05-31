@@ -106,6 +106,104 @@ export default class Graphics {
         return c;
     }
 
+    // ── Intro music (Entrance of the Gladiators) ─────────────────
+
+    private introAudioCtx: AudioContext | null = null;
+    private introLoopTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    private scheduleGladiators(): void {
+        const ac = this.introAudioCtx;
+        if (!ac || ac.state === "closed") return;
+
+        const e = 60 / 160 / 2;   // eighth note at 160 BPM  ≈ 0.1875 s
+        const q = e * 2;           // quarter
+        const h = q * 2;           // half
+
+        // Frequencies
+        const N: Record<string, number> = {
+            'F4': 349.23, 'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30,
+            'A4': 440.00, 'A#4': 466.16, 'B4': 493.88, 'C5': 523.25,
+        };
+
+        // Entry of the Gladiators — main theme (simplified, loops)
+        const melody: [string, number][] = [
+            // Part A — phrase 1
+            ['G4',e],['G4',e],['G#4',e],['A4',e],
+            ['A4',e],['A#4',e],['B4',e],['C5',q],
+            ['G4',e],['G#4',e],['A4',e],['A#4',e],
+            ['B4',h],
+            // Part A — phrase 2
+            ['F4',e],['F4',e],['F#4',e],['G4',e],
+            ['G4',e],['G#4',e],['A4',e],['A#4',q],
+            ['F4',e],['F#4',e],['G4',e],['G#4',e],
+            ['A4',h],
+            // Part B
+            ['G#4',e],['A4',e],['A#4',e],['B4',e],
+            ['G4',e],['G4',e],['G#4',e],['A4',e],
+            ['A#4',e],['B4',e],['G4',e],['G4',e],
+            ['G#4',e],['A4',e],['A#4',e],['B4',e],
+            ['G4',h],
+        ];
+
+        let t = ac.currentTime + 0.05;
+        let total = 0;
+
+        for (const [name, dur] of melody) {
+            const freq = N[name];
+            const osc  = ac.createOscillator();
+            const gain = ac.createGain();
+            osc.connect(gain);
+            gain.connect(ac.destination);
+            osc.type = "sawtooth";
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.12, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.85);
+            osc.start(t);
+            osc.stop(t + dur);
+            t += dur;
+            total += dur;
+        }
+
+        // Loop: reschedule just before the last note ends
+        this.introLoopTimeout = setTimeout(
+            () => this.scheduleGladiators(),
+            (total - 0.1) * 1000
+        );
+    }
+
+    playIntroMusic(): void {
+        this.stopIntroMusic();
+        try {
+            this.introAudioCtx = new AudioContext();
+            const start = () => {
+                this.introAudioCtx?.resume().then(() => this.scheduleGladiators()).catch(() => {});
+            };
+            if (this.introAudioCtx.state === "suspended") {
+                // Browser blocks autoplay until first user interaction
+                const handler = () => {
+                    start();
+                    document.removeEventListener("click",   handler);
+                    document.removeEventListener("keydown", handler);
+                };
+                document.addEventListener("click",   handler);
+                document.addEventListener("keydown", handler);
+            } else {
+                start();
+            }
+        } catch { /* AudioContext unavailable */ }
+    }
+
+    stopIntroMusic(): void {
+        if (this.introLoopTimeout !== null) {
+            clearTimeout(this.introLoopTimeout);
+            this.introLoopTimeout = null;
+        }
+        if (this.introAudioCtx) {
+            this.introAudioCtx.close().catch(() => {});
+            this.introAudioCtx = null;
+        }
+    }
+
     // ── Particle effects (confetti / blood) ───────────────────────
 
     private particleCanvas: HTMLCanvasElement | null = null;
@@ -576,11 +674,13 @@ export default class Graphics {
         container.appendChild(startBtn);
 
         this.addBouncingSprites();
+        this.playIntroMusic();
     }
 
     // ── Setup prompt ─────────────────────────────────────────────
 
     showSetupPrompt(onSubmit: (name: string) => void): void {
+        this.stopIntroMusic();
         this.removeBouncingSprites();
         const container = document.getElementById("app") ?? document.body;
         container.innerHTML = "";
@@ -649,6 +749,7 @@ export default class Graphics {
         onBuyArrows: () => void,
         onBuySecret: () => void
     ): void {
+        this.stopIntroMusic();
         this.removeBouncingSprites();
         this.revealedRooms.clear();
         this.currentRoom = 0;
