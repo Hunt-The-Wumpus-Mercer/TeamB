@@ -362,6 +362,49 @@ export default class Graphics {
         });
     }
 
+    // ── Bouncing intro sprites ────────────────────────────────────
+
+    private addBouncingSprites(): void {
+        this.removeBouncingSprites();
+
+        // Inject keyframe animation once
+        if (!document.getElementById("wumpus-bounce-style")) {
+            const style = document.createElement("style");
+            style.id = "wumpus-bounce-style";
+            style.textContent = `
+                @keyframes wumpusBounce {
+                    0%, 100% { transform: translateY(0); }
+                    50%       { transform: translateY(-40px); }
+                }
+                .intro-sprite {
+                    position: fixed;
+                    bottom: 60px;
+                    width: 140px;
+                    animation: wumpusBounce 0.9s ease-in-out infinite;
+                    pointer-events: none;
+                    z-index: 0;
+                }
+                .intro-sprite-homer  { left: 24px; }
+                .intro-sprite-wumpus { right: 24px; mix-blend-mode: multiply; }
+            `;
+            document.head.appendChild(style);
+        }
+
+        const homer = document.createElement("img");
+        homer.src = new URL('../../assets/Homer_Simpson_2006.png', import.meta.url).href;
+        homer.className = "intro-sprite intro-sprite-homer";
+        document.body.appendChild(homer);
+
+        const wumpus = document.createElement("img");
+        wumpus.src = new URL('../../assets/wumpus.webp', import.meta.url).href;
+        wumpus.className = "intro-sprite intro-sprite-wumpus";
+        document.body.appendChild(wumpus);
+    }
+
+    private removeBouncingSprites(): void {
+        document.querySelectorAll(".intro-sprite").forEach(el => el.remove());
+    }
+
     // ── High scores ───────────────────────────────────────────────
 
     showHighScores(scores: { name: string; score: number; cave: string; turns: number; coins: number; arrows: number }[], onStart: () => void): void {
@@ -422,11 +465,14 @@ export default class Graphics {
         startBtn.addEventListener("click", () => { document.removeEventListener("keydown", onKey); onStart(); });
         document.addEventListener("keydown", onKey);
         container.appendChild(startBtn);
+
+        this.addBouncingSprites();
     }
 
     // ── Setup prompt ─────────────────────────────────────────────
 
     showSetupPrompt(onSubmit: (name: string) => void): void {
+        this.removeBouncingSprites();
         const container = document.getElementById("app") ?? document.body;
         container.innerHTML = "";
         container.style.cssText = "font-family:monospace;max-width:600px;margin:0 auto;padding:16px;";
@@ -492,6 +538,7 @@ export default class Graphics {
         onBuyArrows: () => void,
         onBuySecret: () => void
     ): void {
+        this.removeBouncingSprites();
         this.revealedRooms.clear();
         this.currentRoom = 0;
         this.secrets = [];
