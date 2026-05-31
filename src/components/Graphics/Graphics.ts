@@ -110,13 +110,34 @@ export default class Graphics {
 
     private introAudioCtx: AudioContext | null = null;
     private introLoopTimeout: ReturnType<typeof setTimeout> | null = null;
-    private introMuteHint: HTMLElement | null = null;
+
+    // Must be called from inside a click/keydown handler so the browser
+    // allows AudioContext creation and resume (autoplay policy).
+    unlockAndPlayIntroMusic(): void {
+        // If a running context already exists just make sure notes are scheduled
+        if (this.introAudioCtx && this.introAudioCtx.state === "running") {
+            if (this.introLoopTimeout === null) this.scheduleGladiators();
+            return;
+        }
+        // Close any stale context
+        if (this.introAudioCtx) { this.introAudioCtx.close().catch(() => {}); this.introAudioCtx = null; }
+
+        try {
+            const ac = new AudioContext();
+            this.introAudioCtx = ac;
+            ac.resume().then(() => {
+                if (this.introAudioCtx === ac && ac.state === "running") {
+                    this.scheduleGladiators();
+                }
+            }).catch(() => {});
+        } catch { /* AudioContext unavailable */ }
+    }
 
     private scheduleGladiators(): void {
         const ac = this.introAudioCtx;
         if (!ac || ac.state !== "running") return;
 
-        const e = 60 / 160 / 2;   // eighth note at 160 BPM ≈ 0.1875 s
+        const e = 60 / 160 / 2;
         const q = e * 2;
         const h = q * 2;
 
@@ -141,22 +162,20 @@ export default class Graphics {
             ['G4',h],
         ];
 
-        // Master gain — volume loud enough to actually hear
         const master = ac.createGain();
-        master.gain.value = 0.4;
+        master.gain.value = 0.45;
         master.connect(ac.destination);
 
         let t = ac.currentTime + 0.05;
         let total = 0;
 
         for (const [name, dur] of melody) {
-            const freq = N[name];
-            const osc  = ac.createOscillator();
-            const env  = ac.createGain();
+            const osc = ac.createOscillator();
+            const env = ac.createGain();
             osc.connect(env);
             env.connect(master);
             osc.type = "sawtooth";
-            osc.frequency.value = freq;
+            osc.frequency.value = N[name];
             env.gain.setValueAtTime(1, t);
             env.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.88);
             osc.start(t);
@@ -171,51 +190,19 @@ export default class Graphics {
         );
     }
 
+    // Called by showHighScores — does NOT create AudioContext (no gesture here)
     playIntroMusic(): void {
-        this.stopIntroMusic();
-        try {
-            const ac = new AudioContext();
-            this.introAudioCtx = ac;
-
-            const tryPlay = () => {
-                if (this.introAudioCtx !== ac) return; // already replaced/stopped
-                if (ac.state === "running" && this.introLoopTimeout === null) {
-                    this.removeMuteHint();
-                    this.scheduleGladiators();
-                }
-            };
-
-            // Fire whenever the context transitions to running
-            ac.addEventListener("statechange", tryPlay);
-            // Also try immediately (works when called from within a user gesture)
-            ac.resume().then(tryPlay).catch(() => {});
-
-            // Show a small unmute hint for first-page-load visitors
-            if (ac.state === "suspended") this.showMuteHint();
-
-        } catch { /* AudioContext unavailable */ }
+        // If already running (context was unlocked by a prior gesture), schedule
+        if (this.introAudioCtx?.state === "running" && this.introLoopTimeout === null) {
+            this.scheduleGladiators();
+        }
+        // Otherwise music will start the moment unlockAndPlayIntroMusic() is called
+        // from one of the button/key handlers below.
     }
 
     stopIntroMusic(): void {
         if (this.introLoopTimeout !== null) { clearTimeout(this.introLoopTimeout); this.introLoopTimeout = null; }
         if (this.introAudioCtx) { this.introAudioCtx.close().catch(() => {}); this.introAudioCtx = null; }
-        this.removeMuteHint();
-    }
-
-    private showMuteHint(): void {
-        this.removeMuteHint();
-        const hint = document.createElement("div");
-        hint.id = "mute-hint";
-        hint.style.cssText = "position:fixed;bottom:12px;left:50%;transform:translateX(-50%);font-family:monospace;font-size:13px;opacity:0.6;pointer-events:none;z-index:5;";
-        hint.textContent = "🔊 Click anywhere to enable music";
-        document.body.appendChild(hint);
-        this.introMuteHint = hint;
-    }
-
-    private removeMuteHint(): void {
-        this.introMuteHint?.remove();
-        this.introMuteHint = null;
-        document.getElementById("mute-hint")?.remove();
     }
 
     // ── Particle effects (confetti / blood) ───────────────────────
@@ -681,9 +668,17 @@ export default class Graphics {
         startBtn.textContent = "[ START GAME ]";
 
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === "Enter") { document.removeEventListener("keydown", onKey); onStart(); }
+            if (e.key === "Enter") {
+                this.unlockAndPlayIntroMusic();
+                document.removeEventListener("keydown", onKey);
+                onStart();
+            }
         };
-        startBtn.addEventListener("click", () => { document.removeEventListener("keydown", onKey); onStart(); });
+        startBtn.addEventListener("click", () => {
+            this.unlockAndPlayIntroMusic();
+            document.removeEventListener("keydown", onKey);
+            onStart();
+        });
         document.addEventListener("keydown", onKey);
         container.appendChild(startBtn);
 
@@ -747,7 +742,12 @@ export default class Graphics {
         const btn = document.createElement("button");
         btn.style.cssText = "margin-top:16px;padding:10px 24px;border:3px solid #000;background:#fff;font-family:monospace;font-size:16px;cursor:pointer;";
         btn.textContent = "Continue";
-        btn.addEventListener("click", () => { this.stopParticles(); overlay.remove(); onContinue(); });
+        btn.addEventListener("click", () => {
+            this.unlockAndPlayIntroMusic(); // create AudioContext inside this gesture
+            this.stopParticles();
+            overlay.remove();
+            onContinue();
+        });
         box.appendChild(btn);
 
         overlay.appendChild(box);
