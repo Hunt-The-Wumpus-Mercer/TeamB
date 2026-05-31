@@ -1,32 +1,391 @@
 {
-  "1":  { "connected_rooms": [7, 26],      "adjacent_rooms": [25, 26, 2, 7, 6, 30] },
-  "2":  { "connected_rooms": [3, 7],       "adjacent_rooms": [26, 3, 9, 8, 7, 1] },
-  "3":  { "connected_rooms": [2, 4, 9],    "adjacent_rooms": [27, 28, 4, 9, 2, 26] },
-  "4":  { "connected_rooms": [3, 5],       "adjacent_rooms": [28, 5, 11, 10, 9, 3] },
-  "5":  { "connected_rooms": [4, 11, 29],  "adjacent_rooms": [29, 30, 6, 11, 4, 28] },
-  "6":  { "connected_rooms": [7, 12, 30],  "adjacent_rooms": [30, 1, 7, 12, 11, 4] },
-  "7":  { "connected_rooms": [1, 2, 6],    "adjacent_rooms": [1, 2, 8, 13, 12, 6] },
-  "8":  { "connected_rooms": [9, 14],      "adjacent_rooms": [2, 9, 15, 14, 13, 7] },
-  "9":  { "connected_rooms": [3, 8, 10],   "adjacent_rooms": [3, 4, 10, 15, 8, 2] },
-  "10": { "connected_rooms": [9, 16],      "adjacent_rooms": [4, 11, 17, 16, 15, 9] },
-  "11": { "connected_rooms": [5, 12, 17],  "adjacent_rooms": [5, 6, 12, 17, 10, 4] },
-  "12": { "connected_rooms": [6, 11, 18],  "adjacent_rooms": [6, 7, 13, 18, 17, 11] },
-  "13": { "connected_rooms": [14, 19],     "adjacent_rooms": [7, 8, 14, 19, 18, 12] },
-  "14": { "connected_rooms": [8, 13, 20],  "adjacent_rooms": [8, 15, 21, 20, 19, 13] },
-  "15": { "connected_rooms": [16, 21],     "adjacent_rooms": [9, 10, 16, 21, 14, 8] },
-  "16": { "connected_rooms": [10, 15, 22], "adjacent_rooms": [10, 17, 23, 22, 21, 15] },
-  "17": { "connected_rooms": [11, 18, 23], "adjacent_rooms": [11, 12, 18, 23, 16, 10] },
-  "18": { "connected_rooms": [12, 17, 24], "adjacent_rooms": [12, 13, 19, 24, 23, 17] },
-  "19": { "connected_rooms": [13, 24, 25], "adjacent_rooms": [13, 14, 20, 25, 24, 18] },
-  "20": { "connected_rooms": [14, 21, 25], "adjacent_rooms": [14, 21, 27, 26, 25, 19] },
-  "21": { "connected_rooms": [15, 20, 27], "adjacent_rooms": [15, 16, 22, 27, 20, 14] },
-  "22": { "connected_rooms": [16, 23, 28], "adjacent_rooms": [16, 23, 29, 28, 27, 21] },
-  "23": { "connected_rooms": [17, 22, 29], "adjacent_rooms": [17, 18, 24, 29, 22, 16] },
-  "24": { "connected_rooms": [18, 19, 30], "adjacent_rooms": [18, 19, 25, 30, 29, 23] },
-  "25": { "connected_rooms": [19, 20, 26], "adjacent_rooms": [19, 20, 26, 1, 30, 24] },
-  "26": { "connected_rooms": [1, 25, 27],  "adjacent_rooms": [20, 27, 3, 2, 1, 25] },
-  "27": { "connected_rooms": [21, 26, 28], "adjacent_rooms": [21, 22, 28, 3, 26, 20] },
-  "28": { "connected_rooms": [22, 27, 29], "adjacent_rooms": [22, 29, 5, 4, 3, 27] },
-  "29": { "connected_rooms": [5, 23, 28],  "adjacent_rooms": [23, 24, 30, 5, 28, 22] },
-  "30": { "connected_rooms": [6, 24],      "adjacent_rooms": [24, 25, 1, 6, 5, 29] }
+  "1": {
+    "connected_rooms": [
+      2,
+      7
+    ],
+    "adjacent_rooms": [
+      2,
+      7
+    ]
+  },
+  "2": {
+    "connected_rooms": [
+      1,
+      8
+    ],
+    "adjacent_rooms": [
+      1,
+      3,
+      7,
+      8
+    ]
+  },
+  "3": {
+    "connected_rooms": [
+      4,
+      8
+    ],
+    "adjacent_rooms": [
+      2,
+      4,
+      8,
+      9
+    ]
+  },
+  "4": {
+    "connected_rooms": [
+      3,
+      10
+    ],
+    "adjacent_rooms": [
+      3,
+      5,
+      9,
+      10
+    ]
+  },
+  "5": {
+    "connected_rooms": [
+      6,
+      10
+    ],
+    "adjacent_rooms": [
+      4,
+      6,
+      10,
+      11
+    ]
+  },
+  "6": {
+    "connected_rooms": [
+      5,
+      12
+    ],
+    "adjacent_rooms": [
+      5,
+      11,
+      12
+    ]
+  },
+  "7": {
+    "connected_rooms": [
+      1,
+      8,
+      14
+    ],
+    "adjacent_rooms": [
+      1,
+      2,
+      8,
+      13,
+      14
+    ]
+  },
+  "8": {
+    "connected_rooms": [
+      2,
+      3,
+      7
+    ],
+    "adjacent_rooms": [
+      2,
+      3,
+      7,
+      9,
+      14,
+      15
+    ]
+  },
+  "9": {
+    "connected_rooms": [
+      15,
+      16
+    ],
+    "adjacent_rooms": [
+      3,
+      4,
+      8,
+      10,
+      15,
+      16
+    ]
+  },
+  "10": {
+    "connected_rooms": [
+      4,
+      5
+    ],
+    "adjacent_rooms": [
+      4,
+      5,
+      9,
+      11,
+      16,
+      17
+    ]
+  },
+  "11": {
+    "connected_rooms": [
+      12,
+      17
+    ],
+    "adjacent_rooms": [
+      5,
+      6,
+      10,
+      12,
+      17,
+      18
+    ]
+  },
+  "12": {
+    "connected_rooms": [
+      6,
+      11,
+      18
+    ],
+    "adjacent_rooms": [
+      6,
+      11,
+      18
+    ]
+  },
+  "13": {
+    "connected_rooms": [
+      14,
+      19
+    ],
+    "adjacent_rooms": [
+      7,
+      14,
+      19
+    ]
+  },
+  "14": {
+    "connected_rooms": [
+      7,
+      13,
+      15
+    ],
+    "adjacent_rooms": [
+      7,
+      8,
+      13,
+      15,
+      19,
+      20
+    ]
+  },
+  "15": {
+    "connected_rooms": [
+      9,
+      14
+    ],
+    "adjacent_rooms": [
+      8,
+      9,
+      14,
+      16,
+      20,
+      21
+    ]
+  },
+  "16": {
+    "connected_rooms": [
+      9,
+      17,
+      21
+    ],
+    "adjacent_rooms": [
+      9,
+      10,
+      15,
+      17,
+      21,
+      22
+    ]
+  },
+  "17": {
+    "connected_rooms": [
+      11,
+      16,
+      22
+    ],
+    "adjacent_rooms": [
+      10,
+      11,
+      16,
+      18,
+      22,
+      23
+    ]
+  },
+  "18": {
+    "connected_rooms": [
+      12,
+      23
+    ],
+    "adjacent_rooms": [
+      11,
+      12,
+      17,
+      23,
+      24
+    ]
+  },
+  "19": {
+    "connected_rooms": [
+      13,
+      20,
+      26
+    ],
+    "adjacent_rooms": [
+      13,
+      14,
+      20,
+      25,
+      26
+    ]
+  },
+  "20": {
+    "connected_rooms": [
+      19,
+      21
+    ],
+    "adjacent_rooms": [
+      14,
+      15,
+      19,
+      21,
+      26,
+      27
+    ]
+  },
+  "21": {
+    "connected_rooms": [
+      16,
+      20,
+      27
+    ],
+    "adjacent_rooms": [
+      15,
+      16,
+      20,
+      22,
+      27,
+      28
+    ]
+  },
+  "22": {
+    "connected_rooms": [
+      17,
+      23,
+      28
+    ],
+    "adjacent_rooms": [
+      16,
+      17,
+      21,
+      23,
+      28,
+      29
+    ]
+  },
+  "23": {
+    "connected_rooms": [
+      18,
+      22,
+      24
+    ],
+    "adjacent_rooms": [
+      17,
+      18,
+      22,
+      24,
+      29,
+      30
+    ]
+  },
+  "24": {
+    "connected_rooms": [
+      23,
+      30
+    ],
+    "adjacent_rooms": [
+      18,
+      23,
+      30
+    ]
+  },
+  "25": {
+    "connected_rooms": [
+      19,
+      26
+    ],
+    "adjacent_rooms": [
+      19,
+      26
+    ]
+  },
+  "26": {
+    "connected_rooms": [
+      19,
+      25,
+      27
+    ],
+    "adjacent_rooms": [
+      19,
+      20,
+      25,
+      27
+    ]
+  },
+  "27": {
+    "connected_rooms": [
+      21,
+      26
+    ],
+    "adjacent_rooms": [
+      20,
+      21,
+      26,
+      28
+    ]
+  },
+  "28": {
+    "connected_rooms": [
+      22,
+      29
+    ],
+    "adjacent_rooms": [
+      21,
+      22,
+      27,
+      29
+    ]
+  },
+  "29": {
+    "connected_rooms": [
+      28,
+      30
+    ],
+    "adjacent_rooms": [
+      22,
+      23,
+      28,
+      30
+    ]
+  },
+  "30": {
+    "connected_rooms": [
+      24,
+      29
+    ],
+    "adjacent_rooms": [
+      23,
+      24,
+      29
+    ]
+  }
 }
