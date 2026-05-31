@@ -106,6 +106,98 @@ export default class Graphics {
         return c;
     }
 
+    // ── Particle effects (confetti / blood) ───────────────────────
+
+    private particleCanvas: HTMLCanvasElement | null = null;
+    private particleAnimId: number | null = null;
+
+    private startParticles(won: boolean): void {
+        this.stopParticles();
+        const canvas = document.createElement("canvas");
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+        canvas.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:190;";
+        document.body.appendChild(canvas);
+        this.particleCanvas = canvas;
+
+        const ctx = canvas.getContext("2d")!;
+        const W = canvas.width, H = canvas.height;
+        const CONFETTI_COLORS = ["#e74c3c","#f39c12","#2ecc71","#3498db","#9b59b6","#e91e63","#00bcd4","#ffeb3b"];
+
+        type P = {
+            x: number; y: number; vx: number; vy: number;
+            rot: number; rotV: number; w: number; h: number;
+            color: string;
+        };
+
+        const spawn = (): P => won ? {
+            x: Math.random() * W,
+            y: -15,
+            vx: (Math.random() - 0.5) * 2.5,
+            vy: 2.5 + Math.random() * 3.5,
+            rot: Math.random() * Math.PI * 2,
+            rotV: (Math.random() - 0.5) * 0.15,
+            w: 6 + Math.random() * 9,
+            h: 10 + Math.random() * 12,
+            color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        } : {
+            x: Math.random() * W,
+            y: -15,
+            vx: (Math.random() - 0.5) * 0.8,
+            vy: 5 + Math.random() * 6,
+            rot: 0, rotV: 0,
+            w: 4 + Math.random() * 7,   // used as radius for drop
+            h: 0, color: "",
+        };
+
+        // Stagger particles across the screen height initially
+        const particles: P[] = Array.from({ length: 120 }, () => {
+            const p = spawn(); p.y = Math.random() * H; return p;
+        });
+
+        const draw = (p: P) => {
+            if (won) {
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rot);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                ctx.restore();
+            } else {
+                const r = p.w;
+                // Teardrop: circle at bottom, pointed tip at top
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+                ctx.fillStyle = "#8B0000";
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(p.x - r * 0.5, p.y - r * 0.3);
+                ctx.lineTo(p.x, p.y - r * 2.2);
+                ctx.lineTo(p.x + r * 0.5, p.y - r * 0.3);
+                ctx.fillStyle = "#8B0000";
+                ctx.fill();
+            }
+        };
+
+        const animate = () => {
+            ctx.clearRect(0, 0, W, H);
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.x += p.vx; p.y += p.vy; p.rot += p.rotV;
+                draw(p);
+                if (p.y > H + 20) particles[i] = spawn();
+            }
+            this.particleAnimId = requestAnimationFrame(animate);
+        };
+        this.particleAnimId = requestAnimationFrame(animate);
+    }
+
+    private stopParticles(): void {
+        if (this.particleAnimId !== null) { cancelAnimationFrame(this.particleAnimId); this.particleAnimId = null; }
+        this.particleCanvas?.remove();
+        this.particleCanvas = null;
+    }
+
     setWumpusRoom(room: number): void {
         this.wumpusRoom = room;
         this.drawMap();
@@ -517,8 +609,10 @@ export default class Graphics {
     // ── Game over ─────────────────────────────────────────────────
 
     showGameOver(won: boolean, message: string, score: number, onContinue: () => void): void {
+        this.startParticles(won);
+
         const overlay = document.createElement("div");
-        overlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:200;";
+        overlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;z-index:200;";
 
         const box = document.createElement("div");
         box.style.cssText = "background:#fff;border:4px solid #000;padding:32px;max-width:400px;width:90%;font-family:monospace;text-align:center;";
@@ -539,7 +633,7 @@ export default class Graphics {
         const btn = document.createElement("button");
         btn.style.cssText = "margin-top:16px;padding:10px 24px;border:3px solid #000;background:#fff;font-family:monospace;font-size:16px;cursor:pointer;";
         btn.textContent = "Continue";
-        btn.addEventListener("click", () => { overlay.remove(); onContinue(); });
+        btn.addEventListener("click", () => { this.stopParticles(); overlay.remove(); onContinue(); });
         box.appendChild(btn);
 
         overlay.appendChild(box);
