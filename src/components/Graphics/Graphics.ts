@@ -638,20 +638,22 @@ export default class Graphics {
     private addDonutBorder(): void {
         this.removeDonutBorder();
         const url  = new URL('../../assets/doughnut.png', import.meta.url).href;
-        const size = 70; // px — size of each donut tile
-        const base = `position:fixed;background-image:url(${url});background-size:${size}px ${size}px;background-repeat:repeat;z-index:10;pointer-events:none;`;
+        const size = 70; // px — nominal donut size (scaled slightly by 'round' to avoid cropping)
+        const base = `position:fixed;background-image:url(${url});background-size:${size}px ${size}px;z-index:10;pointer-events:none;`;
 
-        const make = (style: string) => {
+        const make = (style: string, repeat: string) => {
             const d = document.createElement("div");
             d.className = "donut-border";
-            d.style.cssText = base + style;
+            d.style.cssText = base + `background-repeat:${repeat};` + style;
             document.body.appendChild(d);
         };
 
-        make(`top:0;left:0;right:0;height:${size}px;`);                                          // top
-        make(`bottom:0;left:0;right:0;height:${size}px;`);                                       // bottom
-        make(`top:${size}px;left:0;bottom:${size}px;width:${size}px;`);                          // left
-        make(`top:${size}px;right:0;bottom:${size}px;width:${size}px;`);                         // right
+        // 'round no-repeat' scales tiles horizontally so the row always fits exactly
+        make(`top:0;left:0;right:0;height:${size}px;`,                        "round no-repeat"); // top
+        make(`bottom:0;left:0;right:0;height:${size}px;`,                     "round no-repeat"); // bottom
+        // 'no-repeat round' scales tiles vertically so the column always fits exactly
+        make(`top:${size}px;left:0;bottom:${size}px;width:${size}px;`,        "no-repeat round"); // left
+        make(`top:${size}px;right:0;bottom:${size}px;width:${size}px;`,       "no-repeat round"); // right
     }
 
     private removeDonutBorder(): void {
