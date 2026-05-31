@@ -78,10 +78,32 @@ export default class Graphics {
     // Preload Homer and Wumpus sprites
     private homerImg  = new Image();
     private wumpusImg = new Image();
+    // Processed (white-background-removed) version of the wumpus sprite
+    private wumpusCanvas: HTMLCanvasElement | null = null;
 
     constructor() {
         this.homerImg.src  = new URL('../../assets/Homer_Simpson_2006.png', import.meta.url).href;
         this.wumpusImg.src = new URL('../../assets/wumpus.webp',            import.meta.url).href;
+        this.wumpusImg.onload = () => {
+            this.wumpusCanvas = this.removeWhiteBackground(this.wumpusImg);
+            this.drawMap();
+        };
+    }
+
+    // Draw the image to an offscreen canvas and zero-out near-white pixels
+    private removeWhiteBackground(img: HTMLImageElement): HTMLCanvasElement {
+        const c = document.createElement("canvas");
+        c.width  = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const cx = c.getContext("2d")!;
+        cx.drawImage(img, 0, 0);
+        const data = cx.getImageData(0, 0, c.width, c.height);
+        const px = data.data;
+        for (let i = 0; i < px.length; i += 4) {
+            if (px[i] > 230 && px[i+1] > 230 && px[i+2] > 230) px[i+3] = 0;
+        }
+        cx.putImageData(data, 0, 0);
+        return c;
     }
 
     setWumpusRoom(room: number): void {
@@ -215,10 +237,12 @@ export default class Graphics {
             drawHexagon(ctx, x, y, ROOM_R, "#fff", "#000", isCurrent ? 3 : 1.5);
 
             if (isCurrent) {
-                // Choose sprite: wumpus dog if player is in the wumpus's room, Homer otherwise
-                const sprite = (this.wumpusRoom === room) ? this.wumpusImg : this.homerImg;
-                if (sprite.complete && sprite.naturalWidth > 0) {
-                    const size = ROOM_R * 1.5; // fits inside the hex
+                const isWumpusRoom = this.wumpusRoom === room;
+                const sprite: CanvasImageSource | null = isWumpusRoom
+                    ? (this.wumpusCanvas ?? null)
+                    : (this.homerImg.complete && this.homerImg.naturalWidth > 0 ? this.homerImg : null);
+                if (sprite) {
+                    const size = ROOM_R * 1.5;
                     ctx.drawImage(sprite, x - size / 2, y - size / 2, size, size);
                 }
             }
