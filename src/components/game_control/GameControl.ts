@@ -88,6 +88,7 @@ export default class GameControl {
         );
 
         this.refreshUI();
+        this.gfx.setWumpusRoom(this.map.getRoomLocation(MapObjectType.WUMPUS));
         this.gfx.updateStatusMessage(`Cave "${caveName}" — you start in room ${this.startRoom}. Good luck!`);
         this.checkWarnings();
     }
@@ -220,6 +221,7 @@ export default class GameControl {
             // #1 — BFS flee: wumpus moves 2–4 rooms away, never back to player's room
             const fleeRoom = this.wumpusFlee();
             this.map.setRoomLocation(MapObjectType.WUMPUS, fleeRoom);
+            this.gfx.setWumpusRoom(fleeRoom);
             this.gfx.updateStatusMessage(`You wounded the Wumpus! It flees to room ${fleeRoom}.`);
             this.refreshUI();
             this.checkWarnings();
@@ -266,7 +268,9 @@ export default class GameControl {
         const wRoom = this.map.getRoomLocation(MapObjectType.WUMPUS);
         const neighbors = this.cave.getConnectedRooms(wRoom);
         if (neighbors.length > 0) {
-            this.map.setRoomLocation(MapObjectType.WUMPUS, neighbors[Math.floor(Math.random() * neighbors.length)]);
+            const newRoom = neighbors[Math.floor(Math.random() * neighbors.length)];
+            this.map.setRoomLocation(MapObjectType.WUMPUS, newRoom);
+            this.gfx.setWumpusRoom(newRoom);
             this.gfx.updateStatusMessage("You hear the Wumpus roar and move!");
         }
     }

@@ -72,7 +72,22 @@ export default class Graphics {
 
     private revealedRooms = new Map<number, number[]>();
     private currentRoom = 0;
+    private wumpusRoom  = -1;
     private secrets: string[] = [];
+
+    // Preload Homer and Wumpus sprites
+    private homerImg  = new Image();
+    private wumpusImg = new Image();
+
+    constructor() {
+        this.homerImg.src  = new URL('../../assets/Homer_Simpson_2006.png', import.meta.url).href;
+        this.wumpusImg.src = new URL('../../assets/wumpus.webp',            import.meta.url).href;
+    }
+
+    setWumpusRoom(room: number): void {
+        this.wumpusRoom = room;
+        this.drawMap();
+    }
 
     // ── Build game UI ────────────────────────────────────────────
 
@@ -196,16 +211,24 @@ export default class Graphics {
         this.revealedRooms.forEach((_, room) => {
             const [x, y] = roomPos(room);
             const isCurrent = room === this.currentRoom;
-            drawHexagon(ctx, x, y, ROOM_R,
-                isCurrent ? "#000" : "#fff",
-                "#000",
-                isCurrent ? 3 : 1.5
-            );
-            ctx.fillStyle = isCurrent ? "#fff" : "#000";
-            ctx.font = "bold 11px monospace";
+
+            drawHexagon(ctx, x, y, ROOM_R, "#fff", "#000", isCurrent ? 3 : 1.5);
+
+            if (isCurrent) {
+                // Choose sprite: wumpus dog if player is in the wumpus's room, Homer otherwise
+                const sprite = (this.wumpusRoom === room) ? this.wumpusImg : this.homerImg;
+                if (sprite.complete && sprite.naturalWidth > 0) {
+                    const size = ROOM_R * 1.5; // fits inside the hex
+                    ctx.drawImage(sprite, x - size / 2, y - size / 2, size, size);
+                }
+            }
+
+            // Room number — small, bottom-centre of hex
+            ctx.fillStyle = "#000";
+            ctx.font = `${isCurrent ? "bold" : ""} 9px monospace`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText(String(room), x, y);
+            ctx.fillText(String(room), x, y + ROOM_R * 0.72);
         });
     }
 
@@ -349,10 +372,10 @@ export default class Graphics {
                 th.textContent = h;
                 header.appendChild(th);
             });
-            scores.forEach((s, i) => {
+            scores.forEach((score_in_array, score_index) => {
                 const row = table.insertRow();
-                const caveDisplay = s.cave ? s.cave.replace("cave", "") : "—";
-                [String(i + 1), s.name, String(s.score), caveDisplay, String(s.turns ?? "—"), String(s.coins ?? "—"), String(s.arrows ?? "—")].forEach(val => {
+                const caveDisplay = score_in_array.cave ? score_in_array.cave.replace("cave", "") : "—";
+                [String(score_index + 1), score_in_array.name, String(score_in_array.score), caveDisplay, String(score_in_array.turns ?? "—"), String(score_in_array.coins ?? "—"), String(score_in_array.arrows ?? "—")].forEach(val => {
                     const td = row.insertCell();
                     td.style.cssText = "border:1px solid #000;padding:4px 8px;";
                     td.textContent = val;
