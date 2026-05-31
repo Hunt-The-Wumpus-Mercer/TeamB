@@ -633,6 +633,31 @@ export default class Graphics {
 
     // ── Splash screen ─────────────────────────────────────────────────────────
 
+    // Adds a repeating donut image border around all four edges of the screen.
+    // Each strip is one donut tall/wide and tiles the donut image across its length.
+    private addDonutBorder(): void {
+        this.removeDonutBorder();
+        const url  = new URL('../../assets/doughnut.png', import.meta.url).href;
+        const size = 70; // px — size of each donut tile
+        const base = `position:fixed;background-image:url(${url});background-size:${size}px ${size}px;background-repeat:repeat;z-index:10;pointer-events:none;`;
+
+        const make = (style: string) => {
+            const d = document.createElement("div");
+            d.className = "donut-border";
+            d.style.cssText = base + style;
+            document.body.appendChild(d);
+        };
+
+        make(`top:0;left:0;right:0;height:${size}px;`);                                          // top
+        make(`bottom:0;left:0;right:0;height:${size}px;`);                                       // bottom
+        make(`top:${size}px;left:0;bottom:${size}px;width:${size}px;`);                          // left
+        make(`top:${size}px;right:0;bottom:${size}px;width:${size}px;`);                         // right
+    }
+
+    private removeDonutBorder(): void {
+        document.querySelectorAll(".donut-border").forEach(el => el.remove());
+    }
+
     // The very first screen the player sees when they open the game.
     // A large "CLICK HERE" button starts the intro music and leads to high scores.
     showSplashScreen(onEnter: () => void): void {
@@ -661,8 +686,10 @@ export default class Graphics {
         btn.addEventListener("mouseenter", () => { btn.style.background = "#000"; btn.style.color = "#fff"; });
         btn.addEventListener("mouseleave", () => { btn.style.background = "#fff"; btn.style.color = "#000"; });
         // The click starts the audio (must happen inside a user gesture) then navigates
-        btn.addEventListener("click", () => { this.unlockAndPlayIntroMusic(); onEnter(); });
+        btn.addEventListener("click", () => { this.removeDonutBorder(); this.unlockAndPlayIntroMusic(); onEnter(); });
         container.appendChild(btn);
+
+        this.addDonutBorder();
     }
 
     // ── Bouncing intro sprites ────────────────────────────────────────────────
