@@ -887,7 +887,8 @@ export default class Graphics {
         onMove: () => void,
         onShoot: () => void,
         onBuyArrows: () => void,
-        onBuySecret: () => void
+        onBuySecret: () => void,
+        onQuit: () => void
     ): void {
         this.stopIntroMusic();      // no music during the game
         this.removeBouncingSprites();
@@ -909,10 +910,11 @@ export default class Graphics {
             actions.appendChild(btn);
         };
 
-        makeBtn("Move",        onMove);
-        makeBtn("Shoot Arrow", onShoot);
-        makeBtn("Buy Arrows",  onBuyArrows);
-        makeBtn("Buy Secret",  onBuySecret);
+        makeBtn("Move",              onMove);
+        makeBtn("Shoot Arrow",       onShoot);
+        makeBtn("Buy Arrows",        onBuyArrows);
+        makeBtn("Buy Secret",        onBuySecret);
+        makeBtn("Return to Homepage", onQuit);
 
         container.appendChild(actions);
     }

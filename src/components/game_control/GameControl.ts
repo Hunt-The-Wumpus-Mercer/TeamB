@@ -119,6 +119,7 @@ export default class GameControl {
             () => this.onShootClick(),
             () => this.onBuyArrowsClick(),
             () => this.onBuySecretClick(),
+            () => this.onQuitClick(),
         );
 
         // Draw the initial state
@@ -552,6 +553,16 @@ export default class GameControl {
         });
 
         this.gfx.showDirectionPicker(label, connected, dirLabels, onPick);
+    }
+
+    // ── Quit to homepage ─────────────────────────────────────────
+
+    // Immediately abandons the current game and returns to the high scores screen.
+    // No score is saved, no game-over screen is shown, no particles play.
+    private onQuitClick(): void {
+        if (this.gameOver) return;
+        this.gameOver = true;
+        this.gfx.showHighScores(this.scores.getHighScores(), () => this.startSetup());
     }
 
     // ── Game over ─────────────────────────────────────────────────
