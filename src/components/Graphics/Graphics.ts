@@ -391,8 +391,8 @@ export default class Graphics {
                 .intro-sprite-wrap-right { right: 0; }
                 /* Both images same size; animation sits on the img */
                 .intro-sprite {
-                    width: 150px;
-                    height: 150px;
+                    width: 50vh;
+                    height: 50vh;
                     object-fit: contain;
                     animation: wumpusBounce 0.9s ease-in-out infinite;
                 }
