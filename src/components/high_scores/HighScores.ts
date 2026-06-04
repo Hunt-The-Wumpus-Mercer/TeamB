@@ -37,8 +37,8 @@ export default class HighScores implements IHighScores {
     // and saves the result back to localStorage.
     // If the new score is lower than all 10 existing scores it will be
     // pushed off the end during the trim and effectively discarded.
-    async addScore(name: string, score: number, cave: string, turns: number, coins: number, arrows: number): Promise<void> {
-        this.scores.push({ name: name.trim(), score, cave, turns, coins, arrows });
+    async addScore(name: string, score: number, cave: string, turns: number, coins: number, arrows: number, difficulty?: 'easy' | 'normal' | 'hard'): Promise<void> {
+        this.scores.push({ name: name.trim(), score, cave, turns, coins, arrows, difficulty });
 
         // Sort descending — higher score = better rank
         this.scores.sort((a, b) => b.score - a.score);

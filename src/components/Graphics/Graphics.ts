@@ -13,28 +13,6 @@ const MAP_MARGIN = 50;                                  // gap around the edge o
 const MAP_W = MAP_MARGIN * 2 + 5.5 * MAP_COL_W;        // total canvas width
 const MAP_H = MAP_MARGIN * 2 + 4   * MAP_ROW_H;        // total canvas height
 
-// ── Hex geometry helpers ──────────────────────────────────────────────────────
-
-// For a pointy-top hex, the centre of each flat edge (face) sits at one of
-// six evenly-spaced angles: 0°, 60°, 120°, 180°, 240°, 300°.
-// The distance from the hex centre to a face centre is called the apothem.
-const APOTHEM     = ROOM_R * Math.sqrt(3) / 2;
-const FACE_ANGLES = [0, 1, 2, 3, 4, 5].map(i => i * Math.PI / 3);
-
-// Given a hex at (cx, cy) and a target point (tx, ty), returns the point on
-// the hex's nearest face edge in the direction of the target.
-// This makes tunnel lines enter and exit through face centres, never through vertices.
-function hexFacePoint(cx: number, cy: number, tx: number, ty: number): [number, number] {
-    const angle = Math.atan2(ty - cy, tx - cx); // raw angle toward target
-    let bestAngle = FACE_ANGLES[0];
-    let bestDiff  = Infinity;
-    for (const fa of FACE_ANGLES) {
-        let diff = Math.abs(angle - fa);
-        if (diff > Math.PI) diff = 2 * Math.PI - diff; // wrap-around comparison
-        if (diff < bestDiff) { bestDiff = diff; bestAngle = fa; }
-    }
-    return [cx + APOTHEM * Math.cos(bestAngle), cy + APOTHEM * Math.sin(bestAngle)];
-}
 
 // Draws a single pointy-top hexagon on a canvas context.
 // The first vertex is at the top (−90°), going clockwise in 60° steps.
@@ -1168,7 +1146,7 @@ export default class Graphics {
 
     // Shows the leaderboard table with the top 10 scores, the bouncing sprites,
     // and a START GAME button. Music continues from wherever it left off.
-    showHighScores(scores: { name: string; score: number; cave: string; turns: number; coins: number; arrows: number }[], onStart: () => void): void {
+    showHighScores(scores: { name: string; score: number; cave: string; turns: number; coins: number; arrows: number; difficulty?: string }[], onStart: () => void): void {
         var container = document.getElementById("app");
         if (container == null) container = document.body;
 
@@ -1193,7 +1171,7 @@ export default class Graphics {
             const table = document.createElement("table");
             table.style.cssText = "border-collapse:collapse;width:100%;margin-bottom:16px;";
             const header = table.insertRow();
-            ["#", "Name", "Score", "Cave", "Turns (N)", "Donuts (G)", "Arrows (A)"].forEach(h => {
+            ["#", "Name", "Score", "Cave", "Difficulty", "Turns (N)", "Donuts (G)", "Arrows (A)"].forEach(h => {
                 const th = document.createElement("th");
                 th.style.cssText = "border:1px solid #000;padding:4px 8px;text-align:left;";
                 th.textContent   = h;
@@ -1202,7 +1180,8 @@ export default class Graphics {
             scores.forEach((s, i) => {
                 const row        = table.insertRow();
                 const caveDisplay = s.cave ? s.cave.replace("cave", "") : "—"; // "cave3" → "3"
-                [String(i + 1), s.name, String(s.score), caveDisplay,
+                const diffDisplay = s.difficulty ? s.difficulty.charAt(0).toUpperCase() + s.difficulty.slice(1) : "—";
+                [String(i + 1), s.name, String(s.score), caveDisplay, diffDisplay,
                  String(s.turns ?? "—"), String(s.coins ?? "—"), String(s.arrows ?? "—")
                 ].forEach(val => {
                     const td = row.insertCell();

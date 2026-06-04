@@ -602,6 +602,7 @@ export default class GameControl {
                     this.player.getResource(PlayerResourceType.TURNS),
                     this.player.getResource(PlayerResourceType.COINS),
                     this.player.getResource(PlayerResourceType.ARROWS),
+                    this.difficulty,
                 );
             }
             // Reload scores (in case another game saved while we were playing)
