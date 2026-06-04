@@ -97,6 +97,23 @@ export default class Graphics {
     // All secrets the player has purchased this game (displayed as a list)
     private secrets: string[] = [];
 
+    // Whether the game is running in hard mode (trivia gets sabotaged)
+    private hardMode = false;
+
+    // True while the player is answering trivia inside a pit
+    private inPit = false;
+
+    // True while the player is fighting the Wumpus
+    private inWumpusBattle = false;
+
+    // The dark shaking overlay shown while the player is in a pit
+    private pitOverlay: HTMLElement | null = null;
+
+    // The dark shaking overlay shown during a Wumpus battle
+    private wumpusOverlay: HTMLElement | null = null;
+    // The two Wumpus sprite elements that float above the trivia modal
+    private wumpusSprites: HTMLElement[] = [];
+
     // ── Sprite preloading ────────────────────────────────────────────
 
     // The Homer Simpson sprite shown in the player's current room
@@ -113,6 +130,22 @@ export default class Graphics {
     private donutImg    = new Image();
     // Background-removed version of the donut, drawn to a hidden offscreen canvas
     private donutCanvas: HTMLCanvasElement | null = null;
+    // Transparent-background version (for spinning confetti)
+    private donutDataUrl     = '';
+    // White-background version (for bouncing donuts — zero transparent pixels)
+    private donutFlatDataUrl = '';
+
+    // The pointing finger used in the hard-mode trivia sabotage
+    private fingerImg = new Image();
+
+    // The rock image rained down while the player is in a pit
+    private rockImg = new Image();
+
+    // Looping audio for the pit and Wumpus-battle scenes
+    private pitAudio:     HTMLAudioElement | null = null;
+    private wumpusAudio:  HTMLAudioElement | null = null;
+    private readonly pitSoundUrl     = new URL('../../assets/rocks',        import.meta.url).href;
+    private readonly wumpusSoundUrl  = new URL('../../assets/laughter.mp3', import.meta.url).href;
 
     constructor() {
         // Start loading both sprites as soon as the class is created.
@@ -120,9 +153,33 @@ export default class Graphics {
         this.homerImg.src  = new URL('../../assets/Homer_Simpson_2006.png', import.meta.url).href;
         this.wumpusImg.src = new URL('../../assets/Buns.webp',              import.meta.url).href;
         this.donutImg.src  = new URL('../../assets/doughnut.png',           import.meta.url).href;
-        // Remove the background of the donut image using a flood-fill from the corners
+        this.fingerImg.src = new URL('../../assets/finger.webp',                 import.meta.url).href;
+        this.rockImg.src   = new URL('../../assets/a-large-gray-rock-is-the-central-element-exhibiting-a-rough-texture-and-natural-patterns-that-convey-solidity-and-geological-history-free-png.png.webp', import.meta.url).href;
+        // Remove the background of the donut image using a flood-fill from the corners,
+        // then cache a data URL so every donut display (border, bouncing, confetti) is clean.
         this.donutImg.onload = () => {
-            this.donutCanvas = this.floodFillRemoveBackground(this.donutImg);
+            // Step 1 — remove the background by flood-filling from every corner
+            // AND from the centre (catches the enclosed donut hole).
+            // This works regardless of whether the background is white, grey, or a
+            // checkerboard pattern — it samples the corner pixel's actual colour.
+            this.donutCanvas  = this.floodFillRemoveBackground(this.donutImg);
+            this.donutDataUrl = this.donutCanvas.toDataURL();
+
+            // Step 2 — create a fully opaque (white-backed) version for bouncing
+            // donuts so zero transparent pixels can ever show through.
+            const flat = document.createElement("canvas");
+            flat.width  = this.donutCanvas.width;
+            flat.height = this.donutCanvas.height;
+            const fctx  = flat.getContext("2d")!;
+            fctx.fillStyle = "#fff";
+            fctx.fillRect(0, 0, flat.width, flat.height);
+            fctx.drawImage(this.donutCanvas, 0, 0);   // transparent canvas on white
+            this.donutFlatDataUrl = flat.toDataURL();
+            // Retroactively update any border elements already in the DOM
+            document.querySelectorAll<HTMLElement>(".donut-border").forEach(el => {
+                el.style.backgroundImage = `url(${this.donutDataUrl})`;
+            });
+            // (Bouncing donut imgs use the raw PNG on purpose — white bg blends with the page)
         };
 
         // Once Mr Burns has loaded, strip his white background and refresh the map
@@ -150,10 +207,10 @@ export default class Graphics {
         return c;
     }
 
-    // Removes the background of an image by flood-filling from every corner pixel.
-    // Samples the top-left corner colour, then erases all connected pixels within
-    // a colour tolerance — regardless of the exact background colour.
-    // Much more reliable than a fixed brightness threshold.
+    // Removes the background of an image by flood-filling from the four corners
+    // AND the image centre (to catch the enclosed donut hole).
+    // Samples the top-left corner colour and erases all connected pixels within
+    // a colour tolerance — works for white, grey, or any uniform background.
     private floodFillRemoveBackground(img: HTMLImageElement): HTMLCanvasElement {
         const c  = document.createElement("canvas");
         c.width  = img.naturalWidth;
@@ -163,19 +220,17 @@ export default class Graphics {
 
         const W = c.width, H = c.height;
         const imageData = cx.getImageData(0, 0, W, H);
-        const d = imageData.data; // flat R,G,B,A array
+        const d = imageData.data;
 
-        // Sample the background colour from the top-left corner pixel
         const bgR = d[0], bgG = d[1], bgB = d[2];
-        const TOLERANCE = 40; // how much a pixel can differ and still count as background
+        const TOLERANCE = 60; // generous tolerance to catch checkerboard greys
 
         const isBg = (i: number) =>
-            d[i+3] > 0 && // skip already-transparent pixels
+            d[i+3] > 0 &&
             Math.abs(d[i]   - bgR) <= TOLERANCE &&
             Math.abs(d[i+1] - bgG) <= TOLERANCE &&
             Math.abs(d[i+2] - bgB) <= TOLERANCE;
 
-        // BFS flood-fill starting from all four corners simultaneously
         const visited = new Uint8Array(W * H);
         const queue: number[] = [];
 
@@ -186,23 +241,21 @@ export default class Graphics {
             }
         };
 
-        // Seed from all four corners
+        // Seed from all four corners AND the centre to catch the donut hole
         tryEnqueue(0);
         tryEnqueue(W - 1);
         tryEnqueue(W * (H - 1));
         tryEnqueue(W * H - 1);
+        tryEnqueue(Math.floor(H / 2) * W + Math.floor(W / 2));
 
         while (queue.length > 0) {
             const px = queue.pop()!;
-            d[px * 4 + 3] = 0; // make this pixel transparent
-
-            const x = px % W;
-            const y = Math.floor(px / W);
-
-            if (x > 0)   tryEnqueue(px - 1); // left
-            if (x < W-1) tryEnqueue(px + 1); // right
-            if (y > 0)   tryEnqueue(px - W); // up
-            if (y < H-1) tryEnqueue(px + W); // down
+            d[px * 4 + 3] = 0;
+            const x = px % W, y = Math.floor(px / W);
+            if (x > 0)   tryEnqueue(px - 1);
+            if (x < W-1) tryEnqueue(px + 1);
+            if (y > 0)   tryEnqueue(px - W);
+            if (y < H-1) tryEnqueue(px + W);
         }
 
         cx.putImageData(imageData, 0, 0);
@@ -217,7 +270,7 @@ export default class Graphics {
     private introAudio: HTMLAudioElement | null = null;
 
     // Vite bundles the audio file and gives us a stable URL for it
-    private readonly gladiatorsUrl = new URL('../../assets/gladiators.m4a', import.meta.url).href;
+    private readonly gladiatorsUrl = new URL('../../assets/simpsons song.mp3', import.meta.url).href;
 
     // Creates the audio element on first call, then starts playing (looping).
     // Safe to call multiple times — won't restart if already playing.
@@ -347,6 +400,83 @@ export default class Graphics {
         this.particleCanvas = null;
     }
 
+    // ── Rock particles (pit) ──────────────────────────────────────────────────
+    // Rocks rain down behind the pit overlay (z-index 51) while the player is
+    // answering trivia to escape. Same pattern as startParticles().
+
+    private rockCanvas:  HTMLCanvasElement | null = null;
+    private rockAnimId:  number | null = null;
+
+    private startRockParticles(): void {
+        this.stopRockParticles();
+
+        const canvas       = document.createElement("canvas");
+        canvas.width       = window.innerWidth;
+        canvas.height      = window.innerHeight;
+        // z-index 51: above the dark pit overlay (50) but well below the trivia modal (100)
+        canvas.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:51;";
+        document.body.appendChild(canvas);
+        this.rockCanvas = canvas;
+
+        const ctx = canvas.getContext("2d")!;
+        const W = canvas.width, H = canvas.height;
+
+        type R = { x: number; y: number; vx: number; vy: number; rot: number; rotV: number; w: number; h: number };
+
+        const aspect = (this.rockImg.naturalHeight || 120) / (this.rockImg.naturalWidth || 150);
+
+        const spawn = (): R => {
+            const w = 55 + Math.random() * 50;   // 55–105 px wide
+            return {
+                x:    Math.random() * W,
+                y:    -80,
+                vx:   (Math.random() - 0.5) * 3,
+                vy:   3 + Math.random() * 4,
+                rot:  Math.random() * Math.PI * 2,
+                rotV: (Math.random() - 0.5) * 0.05,
+                w,
+                h: w * aspect,
+            };
+        };
+
+        // Stagger initial positions so rocks are already mid-fall when the overlay opens
+        const particles: R[] = Array.from({ length: 18 }, () => {
+            const p = spawn(); p.y = Math.random() * H; return p;
+        });
+
+        const animate = () => {
+            ctx.clearRect(0, 0, W, H);
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.x += p.vx; p.y += p.vy; p.rot += p.rotV;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rot);
+                if (this.rockImg.complete && this.rockImg.naturalWidth > 0) {
+                    ctx.drawImage(this.rockImg, -p.w / 2, -p.h / 2, p.w, p.h);
+                } else {
+                    // Fallback grey oval while image loads
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, p.w / 2, p.h / 2, 0, 0, Math.PI * 2);
+                    ctx.fillStyle = "#888";
+                    ctx.fill();
+                }
+                ctx.restore();
+
+                if (p.y > H + 100) particles[i] = spawn();
+            }
+            this.rockAnimId = requestAnimationFrame(animate);
+        };
+        this.rockAnimId = requestAnimationFrame(animate);
+    }
+
+    private stopRockParticles(): void {
+        if (this.rockAnimId !== null) { cancelAnimationFrame(this.rockAnimId); this.rockAnimId = null; }
+        this.rockCanvas?.remove();
+        this.rockCanvas = null;
+    }
+
     // ── Wumpus room tracking ──────────────────────────────────────────────────
 
     // Called by GameControl whenever the Wumpus moves to a new room.
@@ -370,7 +500,7 @@ export default class Graphics {
         this.elName   = this.statSpan(stats, "Player: —");
         this.elRoom   = this.statSpan(stats, "Room: —");
         this.elArrows = this.statSpan(stats, "Arrows: —");
-        this.elCoins  = this.statSpan(stats, "Coins: —");
+        this.elCoins  = this.statSpan(stats, "Donuts: —");
         this.elTurns  = this.statSpan(stats, "Turns: —");
         container.appendChild(stats);
 
@@ -421,7 +551,7 @@ export default class Graphics {
 
     updatePlayerName(name: string): void   { this.elName.textContent   = `Player: ${name}`; }
     updateArrowCount(a: number): void      { this.elArrows.textContent = `Arrows: ${a}`; }
-    updateCoinCount(c: number): void       { this.elCoins.textContent  = `Coins: ${c}`; }
+    updateCoinCount(c: number): void       { this.elCoins.textContent  = `Donuts: ${c}`; }
     updateTurnCount(t: number): void       { this.elTurns.textContent  = `Turns: ${t}`; }
     updateCurrentRoom(n: number): void     { this.elRoom.textContent   = `Room: ${n}`; this.currentRoom = n; this.drawMap(); }
     updateRoomExits(_adj: number[]): void  { /* exits are handled by revealRoom() instead */ }
@@ -465,6 +595,7 @@ export default class Graphics {
     // Only rooms that have been visited are shown (fog of war).
     // The current room shows Homer or Mr Burns depending on whether the Wumpus is there.
     private drawMap(): void {
+        if (!this.ctx) return; // canvas not built yet (e.g. called from image onload before buildUI)
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -520,10 +651,12 @@ export default class Graphics {
     // Shows a full-screen dimmed overlay with the trivia question, four answer
     // buttons, and a progress header (e.g. "Question 2 of 3 | Correct: 1 | Need: 2").
     // Calls onAnswer(index) when the player clicks an answer button.
+    // In hard mode the buttons scramble and a finger auto-clicks the wrong answer.
     showTriviaModal(
         question: string,
         answers: string[],
         qNum: number, totalQ: number, correctSoFar: number, required: number,
+        correctAnswerIndex: number,
         onAnswer: (index: number) => void
     ): void {
         const overlay = document.createElement("div");
@@ -532,6 +665,27 @@ export default class Graphics {
 
         const box = document.createElement("div");
         box.style.cssText = "background:#fff;border:3px solid #000;padding:24px;max-width:480px;width:90%;font-family:monospace;";
+
+        // Show a context banner at the top of the modal when in a special situation
+        if (this.inPit) {
+            const banner = document.createElement("div");
+            banner.style.cssText = [
+                "background:#8B0000", "color:#fff", "font-weight:bold",
+                "padding:6px 12px", "margin-bottom:12px",
+                "font-size:13px", "text-align:center", "letter-spacing:0.05em",
+            ].join(";");
+            banner.textContent = "⬇  YOU ARE IN A PIT  ⬇";
+            box.appendChild(banner);
+        } else if (this.inWumpusBattle) {
+            const banner = document.createElement("div");
+            banner.style.cssText = [
+                "background:#8B4500", "color:#fff", "font-weight:bold",
+                "padding:6px 12px", "margin-bottom:12px",
+                "font-size:13px", "text-align:center", "letter-spacing:0.05em",
+            ].join(";");
+            banner.textContent = "⚔  YOU ARE FIGHTING THE WUMPUS  ⚔";
+            box.appendChild(banner);
+        }
 
         // Progress line at the top of the modal
         const header = document.createElement("p");
@@ -546,11 +700,113 @@ export default class Graphics {
         box.appendChild(q);
 
         // One button per answer (labelled A, B, C, D)
+        const btns: HTMLButtonElement[] = [];
         answers.forEach((ans, i) => {
             const btn = document.createElement("button");
-            btn.style.cssText = "display:block;width:100%;margin-bottom:8px;padding:8px;border:2px solid #000;background:#fff;font-family:monospace;font-size:14px;cursor:pointer;text-align:left;";
+            btn.style.cssText = "display:block;width:100%;margin-bottom:8px;padding:8px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:14px;cursor:pointer;text-align:left;transition:transform 0.12s;";
             btn.textContent   = `${String.fromCharCode(65 + i)}) ${ans}`;
-            btn.addEventListener("click", () => { this.closeTriviaModal(); onAnswer(i); });
+
+            if (this.hardMode) {
+                // In hard mode the player's click triggers the gag sequence.
+                // reportedIndices tracks which answer index each button position reports;
+                // swapping text also swaps these so the submitted answer is always wrong.
+                btn.addEventListener("click", () => {
+                    const clickedIdx = i;
+                    btns.forEach(b => b.style.pointerEvents = "none");
+
+                    // reportedIndices[pos] = the answer index that will be submitted if pos is clicked
+                    const reportedIndices = answers.map((_, k) => k);
+
+                    // Phase 1 — scramble labels + indices 6 times over 600 ms
+                    let shufflesDone = 0;
+                    const scrambleInterval = setInterval(() => {
+                        const a = Math.floor(Math.random() * btns.length);
+                        let   b = Math.floor(Math.random() * (btns.length - 1));
+                        if (b >= a) b++;
+                        [btns[a].textContent,    btns[b].textContent   ] = [btns[b].textContent,    btns[a].textContent   ];
+                        [reportedIndices[a],      reportedIndices[b]    ] = [reportedIndices[b],      reportedIndices[a]    ];
+                        btns[a].style.transform = "scale(1.08)";
+                        btns[b].style.transform = "scale(1.08)";
+                        setTimeout(() => { btns[a].style.transform = ""; btns[b].style.transform = ""; }, 80);
+
+                        shufflesDone++;
+                        if (shufflesDone >= 6) {
+                            clearInterval(scrambleInterval);
+
+                            // Phase 2 — ensure the clicked spot now holds a wrong answer.
+                            // If the correct answer drifted to clickedIdx, swap it away.
+                            if (reportedIndices[clickedIdx] === correctAnswerIndex) {
+                                // Find any other position that is NOT the correct answer
+                                const swapTo = reportedIndices.findIndex(
+                                    (ri, k) => k !== clickedIdx && ri !== correctAnswerIndex
+                                );
+                                if (swapTo !== -1) {
+                                    [btns[clickedIdx].textContent, btns[swapTo].textContent] =
+                                        [btns[swapTo].textContent,  btns[clickedIdx].textContent];
+                                    [reportedIndices[clickedIdx],  reportedIndices[swapTo]] =
+                                        [reportedIndices[swapTo],   reportedIndices[clickedIdx]];
+                                }
+                            }
+
+                            // Phase 3 — finger goes to the button the player clicked.
+                            //
+                            // Finger image points upward naturally; rotate(-90deg) makes tip point left.
+                            // After rotate(-90deg):
+                            //   visual width  = cssH  (CSS height spans horizontally)
+                            //   visual height = cssW  (CSS width  spans vertically)
+                            //   visual centre x = layout_left + cssW/2  (rotation is around element centre)
+                            //
+                            // "Half the finger inside the box" means the visual midpoint is at rect.right:
+                            //   layout_left + cssW/2 = rect.right  →  layout_left = rect.right - cssW/2
+                            const targetBtn = btns[clickedIdx];
+                            const rect      = targetBtn.getBoundingClientRect();
+                            const btnCY     = rect.top + rect.height / 2;
+
+                            const imgNW  = this.fingerImg.naturalWidth  || 80;
+                            const imgNH  = this.fingerImg.naturalHeight || 160;
+                            const aspect = imgNH / imgNW;
+                            // Fixed size so the finger is always the same and stops at the same
+                            // depth regardless of whether the answer text wraps or not.
+                            const cssW   = 36;
+                            const cssH   = cssW * aspect;
+
+                            const finalLeft = rect.right - cssW / 2;   // exactly half the finger inside
+                            const topPos    = btnCY - cssH / 2;
+
+                            const finger = document.createElement("img");
+                            finger.id  = "hard-mode-finger";
+                            finger.src = this.fingerImg.src;
+                            finger.style.cssText = [
+                                "position:fixed",
+                                `left:${window.innerWidth + 80}px`,
+                                `top:${topPos}px`,
+                                `width:${cssW}px`,
+                                `height:${cssH}px`,
+                                "transform:rotate(-90deg)",
+                                "z-index:9999",
+                                "pointer-events:none",
+                                "transition:left 0.75s cubic-bezier(0.25,0.46,0.45,0.94)",
+                            ].join(";");
+                            document.body.appendChild(finger);
+
+                            requestAnimationFrame(() => requestAnimationFrame(() => {
+                                finger.style.left = `${finalLeft}px`;
+                            }));
+
+                            // Phase 4 — submit the wrong answer after the finger arrives
+                            setTimeout(() => {
+                                finger.remove();
+                                this.closeTriviaModal();
+                                onAnswer(reportedIndices[clickedIdx]); // guaranteed ≠ correctAnswerIndex
+                            }, 900);
+                        }
+                    }, 100);
+                });
+            } else {
+                btn.addEventListener("click", () => { this.closeTriviaModal(); onAnswer(i); });
+            }
+
+            btns.push(btn);
             box.appendChild(btn);
         });
 
@@ -570,7 +826,7 @@ export default class Graphics {
     showDirectionPicker(
         label: string,
         connectedRooms: number[],
-        directionNames: string[],
+        _directionNames: string[],
         onPick: (index: number) => void
     ): void {
         const overlay = document.createElement("div");
@@ -588,15 +844,15 @@ export default class Graphics {
         // One button per available exit
         connectedRooms.forEach((room, i) => {
             const btn = document.createElement("button");
-            btn.style.cssText = "display:block;width:100%;margin-bottom:8px;padding:8px;border:2px solid #000;background:#fff;font-family:monospace;font-size:14px;cursor:pointer;text-align:left;";
-            btn.textContent   = `${directionNames[i]} → Room ${room}`;
+            btn.style.cssText = "display:block;width:100%;margin-bottom:8px;padding:8px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:14px;cursor:pointer;text-align:left;";
+            btn.textContent   = `Room ${room}`;
             btn.addEventListener("click", () => { this.closeDirectionPicker(); onPick(i); });
             box.appendChild(btn);
         });
 
         // Cancel button closes the picker without doing anything
         const cancel = document.createElement("button");
-        cancel.style.cssText = "display:block;width:100%;padding:8px;border:2px solid #000;background:#fff;font-family:monospace;font-size:14px;cursor:pointer;";
+        cancel.style.cssText = "display:block;width:100%;padding:8px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:14px;cursor:pointer;";
         cancel.textContent   = "Cancel";
         cancel.addEventListener("click", () => this.closeDirectionPicker());
         box.appendChild(cancel);
@@ -614,9 +870,10 @@ export default class Graphics {
     // Shows a list of all five available caves for the player to choose from.
     // Stops the intro music when a cave is selected (game is about to start).
     showCavePicker(caves: string[], onPick: (cave: string) => void): void {
+        this.addBouncingDonuts();
         const container = document.getElementById("app") ?? document.body;
         container.innerHTML = "";
-        container.style.cssText = "font-family:monospace;max-width:600px;margin:0 auto;padding:16px;";
+        container.style.cssText = "font-family:monospace;max-width:600px;margin:0 auto;padding:16px;position:relative;z-index:10;";
 
         const title = document.createElement("h2");
         title.textContent = "Choose a Cave";
@@ -624,9 +881,9 @@ export default class Graphics {
 
         caves.forEach((cave, i) => {
             const btn = document.createElement("button");
-            btn.style.cssText = "display:block;width:100%;margin-bottom:10px;padding:10px;border:2px solid #000;background:#fff;font-family:monospace;font-size:15px;cursor:pointer;text-align:left;";
+            btn.style.cssText = "display:block;width:100%;margin-bottom:10px;padding:10px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:15px;cursor:pointer;text-align:left;";
             btn.textContent   = `Cave ${i + 1}  (${cave})`;
-            btn.addEventListener("click", () => { this.stopIntroMusic(); onPick(cave); });
+            btn.addEventListener("click", () => { onPick(cave); });
             container.appendChild(btn);
         });
     }
@@ -637,7 +894,9 @@ export default class Graphics {
     // Each strip is one donut tall/wide and tiles the donut image across its length.
     private addDonutBorder(): void {
         this.removeDonutBorder();
-        const url  = new URL('../../assets/doughnut.png', import.meta.url).href;
+        // Prefer the background-removed data URL; fall back to raw URL.
+        // If the canvas isn't ready yet the onload callback will update the elements.
+        const url  = this.donutDataUrl || new URL('../../assets/doughnut.png', import.meta.url).href;
         const size = 70; // px — nominal donut size (scaled slightly by 'round' to avoid cropping)
         const base = `position:fixed;background-image:url(${url});background-size:${size}px ${size}px;z-index:10;pointer-events:none;`;
 
@@ -679,7 +938,7 @@ export default class Graphics {
 
         const btn = document.createElement("button");
         btn.style.cssText = [
-            "padding:18px 48px", "border:4px solid #000", "background:#fff",
+            "padding:18px 48px", "border:4px solid #000", "background:#FFB6C1",
             "font-family:monospace", "font-size:1.4rem", "cursor:pointer",
             "letter-spacing:0.1em", "transition:background 0.15s,color 0.15s",
         ].join(";");
@@ -754,6 +1013,165 @@ export default class Graphics {
         document.querySelectorAll(".intro-sprite-wrap").forEach(el => el.remove());
     }
 
+    // ── Bouncing donuts (setup screens) ──────────────────────────────────────
+    // Shows several large bouncing donuts in the side gutters during the name-
+    // entry, cave-picker, and difficulty-picker screens.
+
+    private addBouncingDonuts(): void {
+        this.removeBouncingDonuts();
+
+        // Ensure bounce keyframes exist
+        if (!document.getElementById("wumpus-bounce-style")) {
+            const style = document.createElement("style");
+            style.id = "wumpus-bounce-style";
+            style.textContent = `
+                @keyframes wumpusBounce {
+                    0%, 100% { transform: translateY(0); }
+                    50%       { transform: translateY(-40px); }
+                }
+                .intro-sprite-wrap { position:fixed;bottom:60px;display:flex;justify-content:center;align-items:flex-end;width:calc((100vw - 600px) / 2);pointer-events:none;z-index:0; }
+                .intro-sprite-wrap-left  { left:0; }
+                .intro-sprite-wrap-right { right:0; }
+                .intro-sprite { width:50vh;height:50vh;object-fit:contain;animation:wumpusBounce 0.9s ease-in-out infinite; }
+                .intro-sprite-wumpus { mix-blend-mode:multiply; }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Use the white-flattened version so there are no transparent pixels.
+        // If it's not ready yet (image still loading), generate it on the spot.
+        if (!this.donutFlatDataUrl && this.donutImg.complete && this.donutImg.naturalWidth > 0) {
+            const flat = document.createElement("canvas");
+            flat.width = this.donutImg.naturalWidth;
+            flat.height = this.donutImg.naturalHeight;
+            const fctx = flat.getContext("2d")!;
+            fctx.fillStyle = "#fff";
+            fctx.fillRect(0, 0, flat.width, flat.height);
+            fctx.drawImage(this.donutImg, 0, 0);
+            this.donutFlatDataUrl = flat.toDataURL();
+        }
+        const donutSrc = this.donutFlatDataUrl
+            || new URL('../../assets/doughnut.png', import.meta.url).href;
+
+        // Ensure the page itself is white so the donut holes read as white too
+        document.body.style.background = "#fff";
+        document.documentElement.style.background = "#fff";
+
+        // Full-screen container — covers everything including the middle.
+        const grid = document.createElement("div");
+        grid.className = "bouncing-donut-wrap";
+        grid.style.cssText = [
+            "position:fixed", "top:0", "left:0", "width:100vw", "height:100vh",
+            "display:grid",
+            "grid-template-columns:repeat(5,1fr)",
+            "grid-template-rows:repeat(3,1fr)",
+            "pointer-events:none",
+            "z-index:0",
+            "background:#fff",
+            "overflow:hidden",
+        ].join(";");
+
+        const durations = ["0.80s","1.05s","0.90s","1.15s","0.85s",
+                           "1.00s","0.88s","1.10s","0.92s","0.78s",
+                           "1.08s","0.95s","0.82s","1.02s","0.87s"];
+        const delays    = ["0s","0.3s","0.6s","0.2s","0.5s",
+                           "0.4s","0.7s","0.1s","0.55s","0.35s",
+                           "0.8s","0.15s","0.45s","0.65s","0.25s"];
+
+        // Varying sizes (% of cell) so donuts feel organic rather than uniform
+        const sizes = ["72%","95%","60%","88%","78%",
+                       "92%","65%","80%","55%","98%",
+                       "85%","70%","90%","62%","75%"];
+
+        for (let i = 0; i < 15; i++) {
+            const cell = document.createElement("div");
+            cell.style.cssText = "display:flex;align-items:center;justify-content:center;";
+
+            const img = document.createElement("img");
+            img.className = "bouncing-donut-img";
+            img.src = donutSrc;
+            const s = sizes[i];
+            img.style.cssText = [
+                `width:${s}`, `height:${s}`, "object-fit:contain",
+                `animation:wumpusBounce ${durations[i]} ${delays[i]} ease-in-out infinite`,
+            ].join(";");
+            cell.appendChild(img);
+            grid.appendChild(cell);
+        }
+
+        document.body.appendChild(grid);
+        // Note: don't set #app styles here — each screen's container.style.cssText
+        // overwrites inline styles, so we add z-index there directly instead.
+    }
+
+    private removeBouncingDonuts(): void {
+        document.querySelectorAll(".bouncing-donut-wrap").forEach(el => el.remove());
+    }
+
+    // ── Instructions modal ────────────────────────────────────────────────────
+
+    showInstructionsModal(): void {
+        const overlay = document.createElement("div");
+        overlay.id = "instructions-overlay";
+        overlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:100;";
+
+        const box = document.createElement("div");
+        box.style.cssText = "background:#fff;border:3px solid #000;padding:24px;max-width:480px;width:90%;font-family:monospace;max-height:80vh;overflow-y:auto;";
+
+        const title = document.createElement("h2");
+        title.style.cssText = "margin:0 0 12px;border-bottom:2px solid #000;padding-bottom:8px;font-size:16px;";
+        title.textContent = "How to Play";
+        box.appendChild(title);
+
+        const sections: { heading: string; body: string }[] = [
+            {
+                heading: "🏹 How to Win",
+                body: "Shoot an arrow into the Wumpus's room to kill it. Use Shoot Arrow and pick the adjacent room you think it's in. Hit = you win. Miss = the Wumpus wakes up and moves.",
+            },
+            {
+                heading: "🦇 Bats",
+                body: "Walk into a bat's room and it picks you up and drops you in a random room elsewhere in the cave. The bat then flies to a new room too.",
+            },
+            {
+                heading: "⬇ Pits",
+                body: "Fall into a pit and you must answer 2 out of 3 trivia questions correctly to climb out. Fail and it's game over. Each question costs 1 donut.",
+            },
+            {
+                heading: "🐉 Wumpus Battle",
+                body: "Wander into the Wumpus's room and a fight starts. Answer 3 out of 5 trivia questions correctly to wound it and send it fleeing 2–4 rooms away. Fail = game over.",
+            },
+            {
+                heading: "🍩 Donuts",
+                body: "You earn 1 donut each time you move to a new room (up to 100 total). Spend donuts on trivia to Buy Arrows (+2 arrows for 2 of 3 correct) or Buy a Secret (reveals a hidden clue). Go into donut debt mid-challenge = game over.",
+            },
+            {
+                heading: "⚠ Hazard Warnings",
+                body: "\"I smell a Wumpus!\" — Wumpus is in an adjacent room.\n\"Bats nearby\" — a bat is adjacent.\n\"I feel a draft\" — a pit is adjacent.",
+            },
+        ];
+
+        sections.forEach(s => {
+            const h = document.createElement("p");
+            h.style.cssText = "font-weight:bold;margin:10px 0 4px;";
+            h.textContent   = s.heading;
+            box.appendChild(h);
+
+            const p = document.createElement("p");
+            p.style.cssText = "margin:0 0 6px;font-size:13px;white-space:pre-wrap;line-height:1.45;";
+            p.textContent   = s.body;
+            box.appendChild(p);
+        });
+
+        const close = document.createElement("button");
+        close.style.cssText = "display:block;width:100%;margin-top:14px;padding:8px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:14px;cursor:pointer;";
+        close.textContent   = "Close";
+        close.addEventListener("click", () => overlay.remove());
+        box.appendChild(close);
+
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+    }
+
     // ── High scores screen ────────────────────────────────────────────────────
 
     // Shows the leaderboard table with the top 10 scores, the bouncing sprites,
@@ -763,7 +1181,7 @@ export default class Graphics {
         if (container == null) container = document.body;
 
         container.innerHTML = "";
-        container.style.cssText = "font-family:monospace;max-width:600px;margin:0 auto;padding:16px;";
+        container.style.cssText = "font-family:monospace;max-width:600px;margin:0 auto;padding:16px;position:relative;z-index:10;";
 
         const title = document.createElement("h1");
         title.style.cssText = "border-bottom:3px solid #000;padding-bottom:8px;";
@@ -783,7 +1201,7 @@ export default class Graphics {
             const table = document.createElement("table");
             table.style.cssText = "border-collapse:collapse;width:100%;margin-bottom:16px;";
             const header = table.insertRow();
-            ["#", "Name", "Score", "Cave", "Turns (N)", "Coins (G)", "Arrows (A)"].forEach(h => {
+            ["#", "Name", "Score", "Cave", "Turns (N)", "Donuts (G)", "Arrows (A)"].forEach(h => {
                 const th = document.createElement("th");
                 th.style.cssText = "border:1px solid #000;padding:4px 8px;text-align:left;";
                 th.textContent   = h;
@@ -808,7 +1226,7 @@ export default class Graphics {
         container.appendChild(prompt);
 
         const startBtn = document.createElement("button");
-        startBtn.style.cssText = "padding:10px 24px;border:3px solid #000;background:#fff;font-family:monospace;font-size:16px;cursor:pointer;";
+        startBtn.style.cssText = "padding:10px 24px;border:3px solid #000;background:#FFB6C1;font-family:monospace;font-size:16px;cursor:pointer;";
         startBtn.textContent   = "[ START GAME ]";
 
         // The Enter-key listener is registered at the document level so the
@@ -838,9 +1256,10 @@ export default class Graphics {
     // Removes the bouncing sprites but keeps the intro music playing.
     showSetupPrompt(onSubmit: (name: string) => void): void {
         this.removeBouncingSprites();
+        this.addBouncingDonuts();
         const container = document.getElementById("app") ?? document.body;
         container.innerHTML = "";
-        container.style.cssText = "font-family:monospace;max-width:600px;margin:0 auto;padding:16px;";
+        container.style.cssText = "font-family:monospace;max-width:600px;margin:0 auto;padding:16px;position:relative;z-index:10;";
 
         const title = document.createElement("h2");
         title.textContent = "Enter Your Name";
@@ -849,11 +1268,11 @@ export default class Graphics {
         const input = document.createElement("input");
         input.type        = "text";
         input.placeholder = "Your name";
-        input.style.cssText = "border:2px solid #000;padding:6px;font-family:monospace;font-size:16px;margin-right:8px;width:200px;";
+        input.style.cssText = "border:3px solid #FF1493;padding:6px;font-family:monospace;font-size:16px;margin-right:8px;width:200px;background:#FFB6C1;";
         container.appendChild(input);
 
         const btn = document.createElement("button");
-        btn.style.cssText = "padding:6px 16px;border:2px solid #000;background:#fff;font-family:monospace;font-size:16px;cursor:pointer;";
+        btn.style.cssText = "padding:6px 16px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:16px;cursor:pointer;";
         btn.textContent   = "OK";
         // Default name is "Hunter" if the player leaves the field blank
         const submit = () => onSubmit(input.value.trim() || "Hunter");
@@ -890,7 +1309,7 @@ export default class Graphics {
         box.appendChild(scoreEl);
 
         const btn = document.createElement("button");
-        btn.style.cssText = "margin-top:16px;padding:10px 24px;border:3px solid #000;background:#fff;font-family:monospace;font-size:16px;cursor:pointer;";
+        btn.style.cssText = "margin-top:16px;padding:10px 24px;border:3px solid #000;background:#FFB6C1;font-family:monospace;font-size:16px;cursor:pointer;";
         btn.textContent   = "Continue";
         btn.addEventListener("click", () => {
             // Create/resume the AudioContext inside this click handler — this is
@@ -907,6 +1326,231 @@ export default class Graphics {
         document.body.appendChild(overlay);
     }
 
+    // ── Difficulty ────────────────────────────────────────────────────────────
+
+    // Tells Graphics whether trivia challenges should be sabotaged (hard mode).
+    setHardMode(hard: boolean): void {
+        this.hardMode = hard;
+    }
+
+    // Shows a simple difficulty selection screen.
+    showDifficultyPicker(onPick: (difficulty: 'easy' | 'normal' | 'hard') => void): void {
+        this.addBouncingDonuts();
+        const container = document.getElementById("app") ?? document.body;
+        container.innerHTML = "";
+        container.style.cssText = "font-family:monospace;max-width:600px;margin:0 auto;padding:16px;position:relative;z-index:10;";
+
+        const title = document.createElement("h2");
+        title.textContent = "Select Difficulty";
+        container.appendChild(title);
+
+        const choices: { id: 'easy' | 'normal' | 'hard'; label: string; desc: string }[] = [
+            { id: 'easy',   label: 'Easy',   desc: 'Start with 3 bonus coins.' },
+            { id: 'normal', label: 'Normal', desc: 'Standard rules.' },
+            { id: 'hard',   label: 'Hard',   desc: "Good luck clicking that answer…" },
+        ];
+
+        choices.forEach(c => {
+            const btn = document.createElement("button");
+            btn.style.cssText = "display:block;width:100%;margin-bottom:10px;padding:10px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:15px;cursor:pointer;text-align:left;";
+            btn.textContent = c.label;
+            btn.addEventListener("click", () => onPick(c.id));
+            container.appendChild(btn);
+        });
+    }
+
+    // ── Pit overlay ───────────────────────────────────────────────────────────
+
+    // Shows a dark, shaking "You fell into a pit!" overlay behind the trivia modals.
+    showPitOverlay(): void {
+        this.hidePitOverlay();
+
+        // Inject shake keyframes once
+        if (!document.getElementById("pit-shake-style")) {
+            const style = document.createElement("style");
+            style.id    = "pit-shake-style";
+            style.textContent = `
+                @keyframes pitShake {
+                    0%,100% { transform:translate(0,0) rotate(0deg); }
+                    10%     { transform:translate(-7px,-3px) rotate(-1deg); }
+                    20%     { transform:translate(7px,3px)   rotate(1deg); }
+                    30%     { transform:translate(-5px,2px)  rotate(0.5deg); }
+                    40%     { transform:translate(9px,-4px)  rotate(-1deg); }
+                    50%     { transform:translate(-9px,4px)  rotate(1deg); }
+                    60%     { transform:translate(5px,-2px)  rotate(-0.5deg); }
+                    70%     { transform:translate(-3px,5px)  rotate(0deg); }
+                    80%     { transform:translate(3px,-5px)  rotate(1deg); }
+                    90%     { transform:translate(-2px,2px)  rotate(-0.5deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        const overlay = document.createElement("div");
+        overlay.id          = "pit-overlay";
+        overlay.style.cssText = [
+            "position:fixed", "top:0", "left:0", "width:100%", "height:100%",
+            "background:rgba(0,0,0,0.55)",
+            "display:flex", "flex-direction:column",
+            "align-items:center", "justify-content:center",
+            "z-index:50",
+            "animation:pitShake 0.45s ease-in-out infinite",
+            "pointer-events:none",
+        ].join(";");
+
+        const msg = document.createElement("div");
+        msg.style.cssText = [
+            "color:#ff3333", "font-family:monospace", "font-size:clamp(1.4rem,4vw,2.2rem)",
+            "font-weight:bold", "text-align:center",
+            "text-shadow:0 0 16px #ff0000,0 0 32px #880000",
+            "padding:0 16px",
+        ].join(";");
+        msg.textContent = "⬇  You fell into a pit!  ⬇";
+        overlay.appendChild(msg);
+
+        const sub = document.createElement("div");
+        sub.style.cssText = "color:#ffaaaa;font-family:monospace;font-size:1rem;margin-top:12px;text-align:center;";
+        sub.textContent   = "Answer the trivia questions to climb out…";
+        overlay.appendChild(sub);
+
+        document.body.appendChild(overlay);
+        this.pitOverlay = overlay;
+        this.inPit = true;
+        this.startRockParticles();
+        // Start looping rocks audio
+        if (!this.pitAudio) {
+            this.pitAudio = new Audio(this.pitSoundUrl);
+            this.pitAudio.loop   = true;
+            this.pitAudio.volume = 0.6;
+        }
+        // NOTE: rocks audio disabled — the 'rocks' asset file is an HTML page,
+        // not a valid audio file. Replace src/assets/rocks with a real audio file
+        // and re-enable this block.
+        // this.pitAudio.currentTime = 0;
+        // this.pitAudio.play().catch(() => {});
+    }
+
+    // Removes the pit overlay, stops rocks and audio.
+    hidePitOverlay(): void {
+        this.pitOverlay?.remove();
+        this.pitOverlay = null;
+        document.getElementById("pit-overlay")?.remove();
+        this.inPit = false;
+        this.stopRockParticles();
+        this.pitAudio?.pause();
+        if (this.pitAudio) this.pitAudio.currentTime = 0;
+    }
+
+    // Shows a dark shaking "You are fighting the Wumpus!" overlay with Wumpus
+    // sprites flanking the trivia modal. No rock particles.
+    showWumpusOverlay(): void {
+        this.hideWumpusOverlay();
+
+        // Reuse the same shake keyframes as the pit
+        if (!document.getElementById("pit-shake-style")) {
+            const style = document.createElement("style");
+            style.id    = "pit-shake-style";
+            style.textContent = `
+                @keyframes pitShake {
+                    0%,100% { transform:translate(0,0) rotate(0deg); }
+                    10%     { transform:translate(-7px,-3px) rotate(-1deg); }
+                    20%     { transform:translate(7px,3px)   rotate(1deg); }
+                    30%     { transform:translate(-5px,2px)  rotate(0.5deg); }
+                    40%     { transform:translate(9px,-4px)  rotate(-1deg); }
+                    50%     { transform:translate(-9px,4px)  rotate(1deg); }
+                    60%     { transform:translate(5px,-2px)  rotate(-0.5deg); }
+                    70%     { transform:translate(-3px,5px)  rotate(0deg); }
+                    80%     { transform:translate(3px,-5px)  rotate(1deg); }
+                    90%     { transform:translate(-2px,2px)  rotate(-0.5deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        const overlay = document.createElement("div");
+        overlay.id = "wumpus-battle-overlay";
+        overlay.style.cssText = [
+            "position:fixed", "top:0", "left:0", "width:100%", "height:100%",
+            "background:rgba(0,0,0,0.55)",
+            "display:flex", "flex-direction:column",
+            "align-items:center", "justify-content:center",
+            "z-index:50",
+            "animation:pitShake 0.45s ease-in-out infinite",
+            "pointer-events:none",
+        ].join(";");
+
+        // Heading banner
+        const msg = document.createElement("div");
+        msg.style.cssText = [
+            "color:#ff9900", "font-family:monospace",
+            "font-size:clamp(1.4rem,4vw,2rem)", "font-weight:bold",
+            "text-align:center", "padding:0 16px",
+            "text-shadow:0 0 16px #ff6600,0 0 32px #880000",
+        ].join(";");
+        msg.textContent = "⚔  You are fighting the Wumpus!  ⚔";
+        overlay.appendChild(msg);
+
+        const sub = document.createElement("div");
+        sub.style.cssText = "color:#ffddaa;font-family:monospace;font-size:1rem;margin-top:10px;text-align:center;";
+        sub.textContent   = "Answer the trivia questions to wound it…";
+        overlay.appendChild(sub);
+
+        // Wumpus sprites removed from overlay — see below
+        document.body.appendChild(overlay);
+        this.wumpusOverlay = overlay;
+        // Start looping laughter audio
+        if (!this.wumpusAudio) {
+            this.wumpusAudio = new Audio(this.wumpusSoundUrl);
+            this.wumpusAudio.loop   = true;
+            this.wumpusAudio.volume = 0.6;
+        }
+        this.wumpusAudio.currentTime = 0;
+        this.wumpusAudio.play().catch(() => {});
+
+        // Wumpus sprites live at z-index 150 (above the trivia modal at 100).
+        // They have their own shake animation so they appear at full brightness,
+        // overlay the trivia box edges when the shake moves them there.
+        const wumpusUrl = new URL('../../assets/Buns.webp', import.meta.url).href;
+        const SPRITE_W  = 160;
+        this.wumpusSprites = [];
+
+        (["left", "right"] as const).forEach(side => {
+            const el = document.createElement("img");
+            el.src = wumpusUrl;
+            el.className = "wumpus-battle-sprite";
+            el.style.cssText = [
+                "position:fixed",
+                "top:50%",
+                "transform:translateY(-50%)",
+                side === "left"
+                    ? `left:calc(50% - 260px - ${SPRITE_W}px)`
+                    : `left:calc(50% + 260px)`,
+                `width:${SPRITE_W}px`,
+                "height:auto",
+                "mix-blend-mode:normal",       // full brightness above overlay
+                "z-index:150",                 // above trivia modal (100)
+                "pointer-events:none",
+                "animation:pitShake 0.45s ease-in-out infinite",
+            ].join(";");
+            document.body.appendChild(el);
+            this.wumpusSprites.push(el);
+        });
+
+        this.inWumpusBattle = true;
+    }
+
+    // Removes the Wumpus battle overlay, sprites, and audio.
+    hideWumpusOverlay(): void {
+        this.wumpusOverlay?.remove();
+        this.wumpusOverlay = null;
+        document.getElementById("wumpus-battle-overlay")?.remove();
+        this.wumpusSprites.forEach(s => s.remove());
+        this.wumpusSprites = [];
+        this.inWumpusBattle = false;
+        this.wumpusAudio?.pause();
+        if (this.wumpusAudio) this.wumpusAudio.currentTime = 0;
+    }
+
     // ── Game layout shell ─────────────────────────────────────────────────────
 
     // Builds the full in-game screen: stops intro music, clears the map and
@@ -921,6 +1565,7 @@ export default class Graphics {
     ): void {
         this.stopIntroMusic();      // no music during the game
         this.removeBouncingSprites();
+        this.removeBouncingDonuts();
         this.revealedRooms.clear(); // start with a blank map (all rooms hidden)
         this.currentRoom = 0;
         this.secrets     = [];      // clear secrets from any previous game
@@ -933,17 +1578,18 @@ export default class Graphics {
 
         const makeBtn = (label: string, handler: () => void) => {
             const btn = document.createElement("button");
-            btn.style.cssText = "padding:8px 14px;border:2px solid #000;background:#fff;font-family:monospace;font-size:14px;cursor:pointer;";
+            btn.style.cssText = "padding:8px 14px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:14px;cursor:pointer;";
             btn.textContent   = label;
             btn.addEventListener("click", handler);
             actions.appendChild(btn);
         };
 
-        makeBtn("Move",              onMove);
-        makeBtn("Shoot Arrow",       onShoot);
-        makeBtn("Buy Arrows",        onBuyArrows);
-        makeBtn("Buy Secret",        onBuySecret);
+        makeBtn("Move",               onMove);
+        makeBtn("Shoot Arrow",        onShoot);
+        makeBtn("Buy Arrows",         onBuyArrows);
+        makeBtn("Buy Secret",         onBuySecret);
         makeBtn("Return to Homepage", onQuit);
+        makeBtn("Instructions",       () => this.showInstructionsModal());
 
         container.appendChild(actions);
     }

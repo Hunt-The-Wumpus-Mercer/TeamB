@@ -47,6 +47,9 @@ export default class GameControl {
     // Prevents buttons from doing anything after the game has ended
     private gameOver = false;
 
+    // Selected difficulty: 'easy' | 'normal' | 'hard'
+    private difficulty: 'easy' | 'normal' | 'hard' = 'normal';
+
     // ── Startup ───────────────────────────────────────────────────
 
     // Called once when the page loads.
@@ -60,12 +63,15 @@ export default class GameControl {
         });
     }
 
-    // Shows the name-entry prompt, then the cave-picker
+    // Shows the name-entry prompt, then the cave-picker, then the difficulty picker
     private startSetup(): void {
         this.gfx.showSetupPrompt(name => {
             this.player.setPlayerName(name);
             this.gfx.showCavePicker(this.cave.getAvailableCaves(), cave => {
-                this.beginGame(cave);
+                this.gfx.showDifficultyPicker(difficulty => {
+                    this.difficulty = difficulty;
+                    this.beginGame(cave);
+                });
             });
         });
     }
@@ -108,8 +114,13 @@ export default class GameControl {
         this.map.setRoomLocation(MapObjectType.PIT1,   pick());
         this.map.setRoomLocation(MapObjectType.PIT2,   pick());
 
-        // Player always starts with 3 arrows
+        // Apply difficulty modifiers
+        this.gfx.setHardMode(this.difficulty === 'hard');
+        // Player always starts with 3 arrows; Easy mode also grants 3 bonus coins
         this.player.incrementResource(PlayerResourceType.ARROWS, 3);
+        if (this.difficulty === 'easy') {
+            this.player.incrementResource(PlayerResourceType.COINS, 3);
+        }
 
         // Build the game UI and attach the four action buttons
         this.container.innerHTML = "";
@@ -187,7 +198,7 @@ export default class GameControl {
         // Try to collect a coin — returns false once the cave's 100-coin supply runs out
         const gotCoin = this.player.collectCoin();
         this.sound.playSound(SoundEventType.WALK);
-        this.gfx.updateStatusMessage(`You move to room ${target}.${gotCoin ? " (+1 coin)" : " (no coins left in cave)"}`);
+        this.gfx.updateStatusMessage(`You move to room ${target}.${gotCoin ? " (+1 donut)" : " (no donuts left in cave)"}`);
 
         // Show a random trivia fact every time the player moves through a tunnel
         this.gfx.updateStatusMessage(`Trivia: ${this.trivia.getHint()}`);
@@ -257,10 +268,12 @@ export default class GameControl {
     // correctly to climb out. Fail → game over. Pass → back to the start room.
     private async handlePit(): Promise<void> {
         this.gfx.updateStatusMessage("You fell into a bottomless pit! Answer 2 of 3 questions to climb out.");
+        this.gfx.showPitOverlay();
         const result = await this.runTriviaChallenge(3, 2);
+        this.gfx.hidePitOverlay();
 
         if (result.outOfCoins) {
-            await this.endGame(false, "You ran out of coins in the pit. Game over.");
+            await this.endGame(false, "You ran out of donuts in the pit. Game over.");
             return;
         }
         if (result.passed) {
@@ -278,10 +291,12 @@ export default class GameControl {
     // Win → Wumpus flees 2–4 rooms away. Lose → game over.
     private async fightWumpus(): Promise<void> {
         this.gfx.updateStatusMessage("The Wumpus is here! Answer 3 of 5 questions to wound it.");
+        this.gfx.showWumpusOverlay();
         const result = await this.runTriviaChallenge(5, 3);
+        this.gfx.hideWumpusOverlay();
 
         if (result.outOfCoins) {
-            await this.endGame(false, "You ran out of coins fighting the Wumpus. Game over.");
+            await this.endGame(false, "You ran out of donuts fighting the Wumpus. Game over.");
             return;
         }
         if (result.passed) {
@@ -393,7 +408,7 @@ export default class GameControl {
     private async onBuyArrowsClick(): Promise<void> {
         if (this.gameOver) return;
         if (this.player.getResource(PlayerResourceType.COINS) < 3) {
-            this.gfx.updateStatusMessage("Not enough coins to purchase arrows (need at least 3).");
+            this.gfx.updateStatusMessage("Not enough donuts to purchase arrows (need at least 3).");
             return;
         }
         this.gfx.updateStatusMessage("Answer 2 of 3 correctly to buy 2 arrows.");
@@ -414,7 +429,7 @@ export default class GameControl {
     private async onBuySecretClick(): Promise<void> {
         if (this.gameOver) return;
         if (this.player.getResource(PlayerResourceType.COINS) < 3) {
-            this.gfx.updateStatusMessage("Not enough coins to buy a secret (need at least 3).");
+            this.gfx.updateStatusMessage("Not enough donuts to buy a secret (need at least 3).");
             return;
         }
         this.gfx.updateStatusMessage("Answer 2 of 3 correctly to buy a secret.");
@@ -497,7 +512,7 @@ export default class GameControl {
 
                     // Coins below zero = the player has gone into debt → game over
                     if (this.player.getResource(PlayerResourceType.COINS) < 0) {
-                        this.gfx.updateStatusMessage("You have gone into debt — you're out of coins!");
+                        this.gfx.updateStatusMessage("You have gone into debt — you're out of donuts!");
                         resolve({ passed: false, outOfCoins: true });
                         return;
                     }
@@ -515,10 +530,11 @@ export default class GameControl {
                 this.gfx.showTriviaModal(
                     q.question,
                     q.answers,
-                    asked,           // current question number
-                    questionCount,   // total questions in this challenge
-                    correct,         // correct answers so far
-                    requiredCorrect, // how many are needed to pass
+                    asked,                  // current question number
+                    questionCount,          // total questions in this challenge
+                    correct,                // correct answers so far
+                    requiredCorrect,        // how many are needed to pass
+                    q.correctAnswerIndex,   // needed for hard-mode sabotage
                     answerIndex => {
                         if (answerIndex === q.correctAnswerIndex) {
                             correct++;
