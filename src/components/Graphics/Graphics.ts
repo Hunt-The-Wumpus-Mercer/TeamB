@@ -1171,7 +1171,7 @@ export default class Graphics {
             const table = document.createElement("table");
             table.style.cssText = "border-collapse:collapse;width:100%;margin-bottom:16px;";
             const header = table.insertRow();
-            ["#", "Name", "Score", "Cave", "Difficulty", "Turns (N)", "Donuts (G)", "Arrows (A)"].forEach(h => {
+            ["#", "Name", "Score", "Cave", "Difficulty", "Turns (N)", "Donuts (D)", "Arrows (A)"].forEach(h => {
                 const th = document.createElement("th");
                 th.style.cssText = "border:1px solid #000;padding:4px 8px;text-align:left;";
                 th.textContent   = h;
