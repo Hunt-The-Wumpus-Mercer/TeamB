@@ -354,7 +354,7 @@ export default class GameControl {
     // exactly one room in a random direction.
     private moveWumpus(): void {
         const wRoom    = this.map.getRoomLocation(MapObjectType.WUMPUS);
-        const neighbors = this.cave.getConnectedRooms(wRoom);
+        const neighbors = this.cave.getAdjacentRooms(wRoom);
         if (neighbors.length > 0) {
             const newRoom = neighbors[Math.floor(Math.random() * neighbors.length)];
             this.map.setRoomLocation(MapObjectType.WUMPUS, newRoom);
