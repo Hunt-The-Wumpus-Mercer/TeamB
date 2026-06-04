@@ -6,10 +6,10 @@
 // The cave is drawn as a 5-row × 6-column honeycomb of pointy-top hexagons.
 // Odd-numbered rows are shifted right by half a column so the hexes tile flush.
 
-const ROOM_R    = 26;                                  // radius of each hex (centre to vertex)
-const MAP_COL_W = Math.round(ROOM_R * Math.sqrt(3));   // ≈ 45px — exact horizontal spacing for touching hexes
-const MAP_ROW_H = Math.round(ROOM_R * 1.5);            // = 39px — exact vertical spacing for touching hexes
-const MAP_MARGIN = 30;                                  // gap around the edge of the canvas (must be ≥ ROOM_R)
+const ROOM_R    = 50;                                  // radius of each hex (centre to vertex)
+const MAP_COL_W = Math.round(ROOM_R * Math.sqrt(3));   // ≈ 87px — exact horizontal spacing for touching hexes
+const MAP_ROW_H = Math.round(ROOM_R * 1.5);            // = 75px — exact vertical spacing for touching hexes
+const MAP_MARGIN = 50;                                  // gap around the edge of the canvas (must be ≥ ROOM_R)
 const MAP_W = MAP_MARGIN * 2 + 5.5 * MAP_COL_W;        // total canvas width
 const MAP_H = MAP_MARGIN * 2 + 4   * MAP_ROW_H;        // total canvas height
 
@@ -144,7 +144,7 @@ export default class Graphics {
     // Looping audio for the pit and Wumpus-battle scenes
     private pitAudio:     HTMLAudioElement | null = null;
     private wumpusAudio:  HTMLAudioElement | null = null;
-    private readonly pitSoundUrl     = new URL('../../assets/rocks',        import.meta.url).href;
+    private readonly pitSoundUrl     = new URL('../../assets/rocks.mp3',    import.meta.url).href;
     private readonly wumpusSoundUrl  = new URL('../../assets/laughter.mp3', import.meta.url).href;
 
     constructor() {
@@ -546,6 +546,12 @@ export default class Graphics {
         return s;
     }
 
+    // Adds black-on-hover / pink-on-leave to any button
+    private addHover(btn: HTMLButtonElement): void {
+        btn.addEventListener("mouseenter", () => { btn.style.background = "#000"; btn.style.color = "#fff"; });
+        btn.addEventListener("mouseleave", () => { btn.style.background = "#FFB6C1"; btn.style.color = "#000"; });
+    }
+
     // ── Live stat updates ─────────────────────────────────────────────────────
     // Each method updates exactly one element in the stats bar or UI.
 
@@ -599,24 +605,7 @@ export default class Graphics {
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Pass 1 — draw tunnel lines between revealed connected rooms.
-        // Lines go from face-centre to face-centre so they never exit through a vertex.
-        ctx.strokeStyle = "#000";
-        ctx.lineWidth   = 1.5;
-        this.revealedRooms.forEach((connected, room) => {
-            const [x1, y1] = roomPos(room);
-            connected.forEach(cr => {
-                if (!this.revealedRooms.has(cr)) return; // only draw if other end is known
-                const [x2, y2] = roomPos(cr);
-                // Skip wrap-around connections that would draw a line across the whole canvas
-                if (Math.abs(x2 - x1) > MAP_COL_W * 3 || Math.abs(y2 - y1) > MAP_ROW_H * 3) return;
-                const [fx1, fy1] = hexFacePoint(x1, y1, x2, y2);
-                const [fx2, fy2] = hexFacePoint(x2, y2, x1, y1);
-                ctx.beginPath(); ctx.moveTo(fx1, fy1); ctx.lineTo(fx2, fy2); ctx.stroke();
-            });
-        });
-
-        // Pass 2 — draw the hex rooms on top of the tunnel lines.
+        // Draw the hex rooms.
         this.revealedRooms.forEach((_, room) => {
             const [x, y]    = roomPos(room);
             const isCurrent = room === this.currentRoom;
@@ -705,6 +694,7 @@ export default class Graphics {
             const btn = document.createElement("button");
             btn.style.cssText = "display:block;width:100%;margin-bottom:8px;padding:8px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:14px;cursor:pointer;text-align:left;transition:transform 0.12s;";
             btn.textContent   = `${String.fromCharCode(65 + i)}) ${ans}`;
+            this.addHover(btn);
 
             if (this.hardMode) {
                 // In hard mode the player's click triggers the gag sequence.
@@ -846,6 +836,7 @@ export default class Graphics {
             const btn = document.createElement("button");
             btn.style.cssText = "display:block;width:100%;margin-bottom:8px;padding:8px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:14px;cursor:pointer;text-align:left;";
             btn.textContent   = `Room ${room}`;
+            this.addHover(btn);
             btn.addEventListener("click", () => { this.closeDirectionPicker(); onPick(i); });
             box.appendChild(btn);
         });
@@ -854,6 +845,7 @@ export default class Graphics {
         const cancel = document.createElement("button");
         cancel.style.cssText = "display:block;width:100%;padding:8px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:14px;cursor:pointer;";
         cancel.textContent   = "Cancel";
+        this.addHover(cancel);
         cancel.addEventListener("click", () => this.closeDirectionPicker());
         box.appendChild(cancel);
 
@@ -883,6 +875,7 @@ export default class Graphics {
             const btn = document.createElement("button");
             btn.style.cssText = "display:block;width:100%;margin-bottom:10px;padding:10px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:15px;cursor:pointer;text-align:left;";
             btn.textContent   = `Cave ${i + 1}  (${cave})`;
+            this.addHover(btn);
             btn.addEventListener("click", () => { onPick(cave); });
             container.appendChild(btn);
         });
@@ -943,9 +936,7 @@ export default class Graphics {
             "letter-spacing:0.1em", "transition:background 0.15s,color 0.15s",
         ].join(";");
         btn.textContent = "CLICK HERE";
-        // Invert colours on hover for a simple visual effect
-        btn.addEventListener("mouseenter", () => { btn.style.background = "#000"; btn.style.color = "#fff"; });
-        btn.addEventListener("mouseleave", () => { btn.style.background = "#fff"; btn.style.color = "#000"; });
+        this.addHover(btn);;
         // The click starts the audio (must happen inside a user gesture) then navigates
         btn.addEventListener("click", () => { this.removeDonutBorder(); this.unlockAndPlayIntroMusic(); onEnter(); });
         container.appendChild(btn);
@@ -1165,6 +1156,7 @@ export default class Graphics {
         const close = document.createElement("button");
         close.style.cssText = "display:block;width:100%;margin-top:14px;padding:8px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:14px;cursor:pointer;";
         close.textContent   = "Close";
+        this.addHover(close);
         close.addEventListener("click", () => overlay.remove());
         box.appendChild(close);
 
@@ -1228,6 +1220,7 @@ export default class Graphics {
         const startBtn = document.createElement("button");
         startBtn.style.cssText = "padding:10px 24px;border:3px solid #000;background:#FFB6C1;font-family:monospace;font-size:16px;cursor:pointer;";
         startBtn.textContent   = "[ START GAME ]";
+        this.addHover(startBtn);
 
         // The Enter-key listener is registered at the document level so the
         // player doesn't have to click the button — just press Enter.
@@ -1274,6 +1267,7 @@ export default class Graphics {
         const btn = document.createElement("button");
         btn.style.cssText = "padding:6px 16px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:16px;cursor:pointer;";
         btn.textContent   = "OK";
+        this.addHover(btn);
         // Default name is "Hunter" if the player leaves the field blank
         const submit = () => onSubmit(input.value.trim() || "Hunter");
         btn.addEventListener("click", submit);
@@ -1311,6 +1305,7 @@ export default class Graphics {
         const btn = document.createElement("button");
         btn.style.cssText = "margin-top:16px;padding:10px 24px;border:3px solid #000;background:#FFB6C1;font-family:monospace;font-size:16px;cursor:pointer;";
         btn.textContent   = "Continue";
+        this.addHover(btn);
         btn.addEventListener("click", () => {
             // Create/resume the AudioContext inside this click handler — this is
             // the user gesture that allows intro music to play on the next high
@@ -1354,6 +1349,7 @@ export default class Graphics {
             const btn = document.createElement("button");
             btn.style.cssText = "display:block;width:100%;margin-bottom:10px;padding:10px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:15px;cursor:pointer;text-align:left;";
             btn.textContent = c.label;
+            this.addHover(btn);
             btn.addEventListener("click", () => onPick(c.id));
             container.appendChild(btn);
         });
@@ -1423,11 +1419,8 @@ export default class Graphics {
             this.pitAudio.loop   = true;
             this.pitAudio.volume = 0.6;
         }
-        // NOTE: rocks audio disabled — the 'rocks' asset file is an HTML page,
-        // not a valid audio file. Replace src/assets/rocks with a real audio file
-        // and re-enable this block.
-        // this.pitAudio.currentTime = 0;
-        // this.pitAudio.play().catch(() => {});
+        this.pitAudio.currentTime = 0;
+        this.pitAudio.play().catch(() => {});
     }
 
     // Removes the pit overlay, stops rocks and audio.
@@ -1580,6 +1573,7 @@ export default class Graphics {
             const btn = document.createElement("button");
             btn.style.cssText = "padding:8px 14px;border:2px solid #000;background:#FFB6C1;font-family:monospace;font-size:14px;cursor:pointer;";
             btn.textContent   = label;
+            this.addHover(btn);
             btn.addEventListener("click", handler);
             actions.appendChild(btn);
         };
